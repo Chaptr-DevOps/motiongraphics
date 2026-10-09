@@ -2,3 +2,6 @@ node_modules/
 out/
 .DS_Store
 *.log
+
+# Font downloads (extracted copies are committed)
+public/brand/fonts/*.zip

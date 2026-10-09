@@ -1,10 +1,26 @@
-// Load brand fonts from public/brand/fonts. Example once files exist:
-//
-// import { staticFile, continueRender, delayRender } from "remotion";
-// const handle = delayRender("font");
-// new FontFace("NightShiftHeading", `url(${staticFile("brand/fonts/Heading-Bold.woff2")})`)
-//   .load()
-//   .then((f) => { document.fonts.add(f); continueRender(handle); });
-//
-// Then set fonts.heading = "NightShiftHeading" in theme.ts.
-export {};
+// Loads Newsreader and Instrument Sans (variable fonts) from public/brand/fonts before any frame renders.
+import { cancelRender, continueRender, delayRender, staticFile } from "remotion";
+
+const faces = [
+  new FontFace("Newsreader", `url(${staticFile("brand/fonts/Newsreader.ttf")}) format("truetype")`, {
+    weight: "200 800",
+    style: "normal",
+  }),
+  new FontFace("Newsreader", `url(${staticFile("brand/fonts/Newsreader-Italic.ttf")}) format("truetype")`, {
+    weight: "200 800",
+    style: "italic",
+  }),
+  new FontFace("Instrument Sans", `url(${staticFile("brand/fonts/InstrumentSans.ttf")}) format("truetype")`, {
+    weight: "400 700",
+    stretch: "75% 100%",
+  }),
+];
+
+const handle = delayRender("Loading brand fonts");
+
+Promise.all(faces.map((f) => f.load()))
+  .then((loaded) => {
+    loaded.forEach((f) => document.fonts.add(f));
+    continueRender(handle);
+  })
+  .catch((err) => cancelRender(err));

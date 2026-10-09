@@ -1,19 +1,24 @@
+import "./brand/fonts";
 import { Composition } from "remotion";
-import { reel } from "./brand/theme";
-import { StarterReel } from "./compositions/StarterReel";
+import { reel, sec } from "./brand/theme";
+import { CANT_FALL_BACK_ASLEEP_SECONDS, CantFallBackAsleep } from "./compositions/CantFallBackAsleep";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
-        id="StarterReel"
-        component={StarterReel}
-        durationInFrames={300}
+        id="CantFallBackAsleep"
+        component={CantFallBackAsleep}
+        durationInFrames={sec(CANT_FALL_BACK_ASLEEP_SECONDS)}
         {...reel}
-        defaultProps={{
-          hook: "Can't switch off after a night shift?",
-          cta: "Download free today",
-        }}
+        defaultProps={{ supers: true }}
+      />
+      <Composition
+        id="CantFallBackAsleep-Textless"
+        component={CantFallBackAsleep}
+        durationInFrames={sec(CANT_FALL_BACK_ASLEEP_SECONDS)}
+        {...reel}
+        defaultProps={{ supers: false }}
       />
     </>
   );
