@@ -37,8 +37,8 @@ export const pose = (p: Partial<Pose>): Pose => ({
   ...p,
 });
 
-const dir = (deg: number): Pt => [Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180)];
-const add = (a: Pt, d: Pt, len: number): Pt => [a[0] + d[0] * len, a[1] + d[1] * len];
+export const dir = (deg: number): Pt => [Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180)];
+export const add = (a: Pt, d: Pt, len: number): Pt => [a[0] + d[0] * len, a[1] + d[1] * len];
 
 export const rig = (p: Pose, s = 1) => {
   const upV = dir(p.lean);
@@ -93,7 +93,7 @@ export const posesAt = (frame: number, keys: Array<[number, Pose, EasingFunction
 };
 
 // Rubber-hose limbs: one smooth quadratic that passes through the joint, so elbows and knees never form a corner.
-const line = (pts: Pt[]) => {
+export const hoseLine = (pts: Pt[]) => {
   const f = (v: number) => v.toFixed(1);
   if (pts.length === 2) return `M ${f(pts[0][0])} ${f(pts[0][1])} L ${f(pts[1][0])} ${f(pts[1][1])}`;
   const [a, j, b] = pts;
@@ -112,7 +112,7 @@ export const Person: React.FC<{ p: Pose; s?: number; color?: string; parts?: "al
   const c = color ?? palette.muted;
   const r = rig(p, s);
   const limb = (pts: Pt[], w: number, o = 1) => (
-    <path d={line(pts)} fill="none" stroke={c} strokeOpacity={o} strokeWidth={w * s} strokeLinecap="round" strokeLinejoin="round" />
+    <path d={hoseLine(pts)} fill="none" stroke={c} strokeOpacity={o} strokeWidth={w * s} strokeLinecap="round" strokeLinejoin="round" />
   );
   const fwd: Pt = [-r.headUp[1] * p.facing, r.headUp[0] * p.facing];
   const eye: Pt = [r.head[0] + fwd[0] * 20 * s + r.headUp[0] * 6 * s, r.head[1] + fwd[1] * 20 * s + r.headUp[1] * 6 * s];

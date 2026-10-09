@@ -3,10 +3,12 @@ import { Composition } from "remotion";
 import { reel, sec } from "./brand/theme";
 import { CANT_FALL_BACK_ASLEEP_SECONDS, CantFallBackAsleep } from "./compositions/CantFallBackAsleep";
 import { SLEEP_TRACKERS_SECONDS, SleepTrackers } from "./compositions/SleepTrackers";
+import { CharacterSheet, SHEET } from "./compositions/CharacterSheet";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition id="CharacterSheet" component={CharacterSheet} durationInFrames={30} fps={30} {...SHEET} />
       <Composition
         id="SleepTrackers"
         component={SleepTrackers}
