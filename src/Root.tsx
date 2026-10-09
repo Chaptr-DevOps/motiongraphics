@@ -5,10 +5,12 @@ import { CANT_FALL_BACK_ASLEEP_SECONDS, CantFallBackAsleep } from "./composition
 import { SLEEP_TRACKERS_SECONDS, SleepTrackers } from "./compositions/SleepTrackers";
 import { CharacterSheet, SHEET } from "./compositions/CharacterSheet";
 import { StyleFrames } from "./compositions/StyleFrames";
+import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
       <Composition id="CharacterSheet" component={CharacterSheet} durationInFrames={30} fps={30} {...SHEET} />
       <Composition
