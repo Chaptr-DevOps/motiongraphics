@@ -2,6 +2,10 @@
 
 Remotion project for short-form 9:16 promo reels (IG Reels / TikTok / Shorts) for **Night Shift**, a sleep app.
 
+## Current direction (overrides the brief)
+- We're making **explainer videos first**. **Do not use app screenshots** (`public/screenshots/`) in any video for now, even where the brief or its worked example calls for app screens. The fix is shown with supers and frosted-glass panels only.
+- Every video **ends with a waitlist call to action** (sign up for the NightShift waitlist). This replaces the brief's "no end cards / CTA lives in the caption" rule.
+
 ## Commands
 - `npm run studio` — live preview in the browser (localhost:3000)
 - `npx remotion render <CompositionId> out/<name>.mp4` — render a video
