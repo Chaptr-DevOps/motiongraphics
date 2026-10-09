@@ -85,9 +85,20 @@ export const content = {
   width: reel.width - safe.right - safe.margin,
 };
 
+const c4 = (2 * Math.PI) / 3;
+
+// Calm defaults (out, inOut) plus the expressive set from easings.net for the explainer style.
 export const ease = {
   out: Easing.bezier(0.22, 1, 0.36, 1),
   inOut: Easing.bezier(0.65, 0, 0.35, 1),
+  outQuart: Easing.bezier(0.25, 1, 0.5, 1),
+  outExpo: Easing.bezier(0.16, 1, 0.3, 1),
+  inExpo: Easing.bezier(0.7, 0, 0.84, 0),
+  outBack: Easing.bezier(0.34, 1.56, 0.64, 1),
+  inOutCubic: Easing.bezier(0.65, 0, 0.35, 1),
+  inOutQuint: Easing.bezier(0.83, 0, 0.17, 1),
+  outElastic: (x: number) => (x <= 0 ? 0 : x >= 1 ? 1 : Math.pow(2, -10 * x) * Math.sin((x * 10 - 0.75) * c4) + 1),
+  linear: (x: number) => x,
 };
 
 // Durations in frames at 30fps.
