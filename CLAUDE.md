@@ -29,7 +29,7 @@ Remotion project for short-form 9:16 promo reels (IG Reels / TikTok / Shorts) fo
 - `out/` — renders (gitignored).
 
 ## Conventions
-- Keep text and key UI inside `safeArea` — platform UI covers the top, bottom and right edges.
+- Keep text and panels inside `safe` / `content` (theme.ts) — platform UI covers the top 250, bottom 420 and right 140 px.
 - Pull every color and font from `theme.ts`; never hardcode brand values in compositions.
 - Timing inside a `Scene` is in seconds from the scene start; `Scene from/to` are on the master timeline.
 - Amber once per video. Supers max seven words, two lines. No clocks or current times on screen.
