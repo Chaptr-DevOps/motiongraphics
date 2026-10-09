@@ -53,16 +53,16 @@ export const palettes = {
 
 export type PaletteName = keyof typeof palettes;
 
+// Sans only: Instrument Sans everywhere (user direction; the serif is retired).
 export const fonts = {
-  serif: "Newsreader, Georgia, serif",
   sans: "'Instrument Sans', system-ui, sans-serif",
 };
 
 // Type scale at 1080x1920.
 export const type = {
-  hook: { fontFamily: fonts.serif, fontWeight: 400, fontSize: 120, lineHeight: 0.95, letterSpacing: "-0.02em" },
-  body: { fontFamily: fonts.serif, fontWeight: 400, fontSize: 88, lineHeight: 0.95, letterSpacing: "-0.02em" },
-  quote: { fontFamily: fonts.serif, fontStyle: "italic", fontWeight: 400, fontSize: 62, lineHeight: 1.35 },
+  hook: { fontFamily: fonts.sans, fontWeight: 600, fontSize: 108, lineHeight: 1.0, letterSpacing: "-0.02em" },
+  body: { fontFamily: fonts.sans, fontWeight: 600, fontSize: 84, lineHeight: 1.02, letterSpacing: "-0.02em" },
+  quote: { fontFamily: fonts.sans, fontWeight: 400, fontSize: 56, lineHeight: 1.35 },
   label: {
     fontFamily: fonts.sans,
     fontWeight: 500,

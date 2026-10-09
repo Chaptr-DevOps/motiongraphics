@@ -1,505 +1,546 @@
-// Script 1: "Sleep trackers". Explainer style test: line art, kinetic type, whip-zoom beats.
+// Script 1: "Sleep trackers". Character-led, fluid style: soft people, liquid motion, no hard corners, sans only.
 // Timings are PLACEHOLDERS (~150 wpm). Retime to the recorded voiceover.
 import { noise2D } from "@remotion/noise";
 import { AbsoluteFill, Sequence, interpolate, random, useCurrentFrame } from "remotion";
-import { ease, fonts, palettes, sec, type } from "../brand/theme";
-import { Beat, Draw, Kinetic, Stage, Starfield, lerp } from "../components/kinetic";
+import { ease, fonts, palettes, sec } from "../brand/theme";
+import { FluidBackground, Goo, LiquidWipe, Stream } from "../components/fluid";
+import { Beat, Draw, Kinetic, Stage, lerp } from "../components/kinetic";
+import { Dream, Mini, Person, pose, posesAt, rig } from "../components/Person";
+import type { Pose } from "../components/Person";
 import { WaitlistPanel } from "../components/WaitlistPanel";
 import { PaletteContext, SupersContext, progress, usePalette } from "../lib/animation";
+import { blobPath, liquidPill, smoothPath } from "../lib/shapes";
+import type { Pt } from "../lib/shapes";
 
 export const SLEEP_TRACKERS_SECONDS = 43.5;
 
 const CX = 498; // horizontal center of the safe content area
 const BEATS = { hook: 0, tap: 5, estimate: 10, timing: 14.6, study: 20.6, week: 29.6, close: 38, cta: 39.6 };
-const OVERLAP = 0.45; // each beat whips out while the next one whips in
-const surges = [BEATS.tap, BEATS.estimate, BEATS.timing, BEATS.study, BEATS.week, BEATS.close].map(sec);
+const OVERLAP = 0.45;
+const HANDOFFS = [BEATS.tap, BEATS.estimate, BEATS.timing, BEATS.study, BEATS.week, BEATS.close, BEATS.cta];
 
-const Label: React.FC<{
+const BED = "#232A4E";
+const PILLOW = "#38416E";
+const BLANKET = "#3B4478";
+const DEVICE = "#2A3158";
+
+const Text: React.FC<{
   x: number;
   y: number;
   children: string;
   p?: number;
   anchor?: "start" | "middle" | "end";
-}> = ({ x, y, children, p = 1, anchor = "middle" }) => {
+  size?: number;
+  color?: string;
+  label?: boolean;
+}> = ({ x, y, children, p = 1, anchor = "middle", size = 46, color, label }) => {
   const palette = usePalette();
-  // Tracking collapses from wide to normal as the label lands.
+  const lin = Math.min(1, Math.max(0, p));
   return (
     <text
       x={x}
-      y={y + (1 - p) * 20}
+      y={y + (1 - p) * 24}
       textAnchor={anchor}
-      fill={palette.muted}
-      opacity={Math.min(1, p)}
-      style={{ fontFamily: fonts.sans, fontWeight: 500, fontSize: 34, letterSpacing: `${0.08 + (1 - p) * 0.5}em` }}
+      fill={color ?? (label ? palette.muted : palette.primary)}
+      opacity={lin}
+      style={{
+        fontFamily: fonts.sans,
+        fontWeight: label ? 500 : 600,
+        fontSize: label ? 32 : size,
+        letterSpacing: label ? `${0.08 + (1 - lin) * 0.4}em` : "-0.01em",
+        filter: lin < 1 ? `blur(${(1 - lin) * 6}px)` : undefined,
+      }}
     >
-      {children.toUpperCase()}
+      {label ? children.toUpperCase() : children}
     </text>
   );
 };
 
-/* 1. Hook: the watch springs in, REM pops inside, gets struck through and falls away. */
+const lying = (x: number, y: number, extra: Partial<Pose> = {}) =>
+  pose({ x, y, lean: 90, head: -4, armL: [6, 4], armR: [4, 2], legL: [2, 0], legR: [-2, 2], eyes: 1, ...extra });
+
+const breathe = (p: Pose, frame: number): Pose => ({ ...p, lean: p.lean + Math.sin(frame * 0.08) * 0.9 });
+
+/** A sleeper in bed: soft base, pillow under the head, body, rippling blanket, near arm resting on top. */
+const Sleeper: React.FC<{ p: Pose; s: number; bedX: number; bedEnd: number; seed: string }> = ({ p, s, bedX, bedEnd, seed }) => {
+  const frame = useCurrentFrame();
+  const r = rig(p, s);
+  const bedY = p.y + 40 * s;
+  const blanketX = p.x - 105 * s;
+  return (
+    <g>
+      <rect x={bedX} y={bedY} width={bedEnd - bedX} height={110 * s} rx={55 * s} fill={BED} stroke="rgba(255,255,255,0.12)" strokeWidth={3} />
+      <ellipse cx={r.head[0] - 6 * s} cy={bedY - 10 * s} rx={92 * s} ry={34 * s} fill={PILLOW} />
+      <Person p={p} s={s} parts="body" />
+      <path
+        d={liquidPill(blanketX, p.y - 54 * s - Math.sin(frame * 0.08) * 3, bedEnd - 8 - blanketX, 100 * s, seed, frame / 60, 5)}
+        fill={BLANKET}
+      />
+      <Person p={p} s={s} parts="nearArm" />
+    </g>
+  );
+};
+
+/* 1. Hook: a sleeper checks their watch; REM swells into a bubble above them, then melts and drips away. */
 const Hook: React.FC = () => {
   const frame = useCurrentFrame();
   const palette = usePalette();
-  const cy = 1080;
-  const watchIn = progress(frame, 0, 26, ease.outBack);
-  const ring = progress(frame, 2, 30, ease.outQuart);
-  const strap = progress(frame, 12, 26, ease.inOutCubic);
-  const rem = progress(frame, 16, 22, ease.outBack);
-  const remLin = progress(frame, 16, 10, ease.linear);
-  const strike = progress(frame, sec(3.2), 10, ease.outExpo);
-  const fall = progress(frame, sec(3.65), 22, ease.inExpo);
-  const orbit = frame * 0.07 - Math.PI / 2;
-  const breathe = 1 + Math.sin(frame * 0.08) * 0.01;
+  const t = frame / 30;
+  const S = 1.35;
+  const rest = lying(640, 1170);
+  const look: Pose = { ...rest, armR: [96, 84], head: 8 };
+  const p = breathe(posesAt(frame, [[8, rest], [34, look, ease.outBack]]), frame);
+  const r = rig(p, S);
+  const wrist = r.armR[2];
+  const bubble: Pt = [CX, 700];
+  const bubbleIn = progress(frame, 32, 34, ease.outElastic);
+  const reach = progress(frame, 26, 22, ease.outQuart) * (1 - progress(frame, 70, 20));
+  const remIn = progress(frame, 46, 22, ease.outBack);
+  const meltAt = sec(3.3);
+  const pop = progress(frame, sec(4.35), 16, ease.outExpo);
+  const R = 190 * bubbleIn;
+  const stream = smoothPath([wrist, [wrist[0] + 70, wrist[1] - 140], [bubble[0] - 40, bubble[1] + 300], [bubble[0], bubble[1] + R * 0.9]]);
+  const letters = [
+    { ch: "R", dx: -98 },
+    { ch: "E", dx: 0 },
+    { ch: "M", dx: 104 },
+  ];
   return (
     <AbsoluteFill>
       <Stage>
-        <g
-          transform={`translate(${CX} ${cy}) scale(${(0.6 + 0.4 * watchIn) * breathe}) rotate(${(1 - watchIn) * -18})`}
-          opacity={Math.min(1, watchIn * 2)}
-        >
-          <Draw d="M -120 -232 L -100 -430 H 100 L 120 -232" p={strap} opacity={0.6} tip={false} />
-          <Draw d="M -120 232 L -100 430 H 100 L 120 232" p={strap} opacity={0.6} tip={false} />
-          <Draw d="M 0 -250 A 250 250 0 1 1 -0.1 -250" p={ring} width={6} />
-          <Draw d="M 250 -40 h 26 v 80 h -26" p={strap} tip={false} />
-          <circle cx={Math.cos(orbit) * 250} cy={Math.sin(orbit) * 250} r={9} fill={palette.primary} opacity={ring} />
-          <circle cx={Math.cos(orbit) * 250} cy={Math.sin(orbit) * 250} r={26} fill={palette.primary} opacity={ring * 0.15} />
-          <g transform={`translate(0 ${fall * 420}) rotate(${fall * 14})`} opacity={remLin * (1 - fall)}>
-            <text
-              y={55}
-              textAnchor="middle"
-              fill={palette.primary}
-              opacity={1 - strike * 0.45}
-              transform={`scale(${0.4 + 0.6 * rem})`}
-              style={{ fontFamily: fonts.serif, fontSize: 170, letterSpacing: "-0.02em" }}
-            >
-              REM
-            </text>
-            <Draw d="M -170 10 L 170 0" p={strike} width={7} />
-          </g>
+        <defs>
+          <Goo id="hook-goo" blur={10} />
+        </defs>
+        <Sleeper p={p} s={S} bedX={110} bedEnd={910} seed="blanket" />
+        <circle cx={wrist[0]} cy={wrist[1]} r={34 + Math.sin(frame * 0.2) * 4} fill={palette.primary} opacity={0.14 * Math.min(1, reach + remIn)} />
+        <circle cx={wrist[0]} cy={wrist[1]} r={15} fill={palette.primary} />
+        <g filter="url(#hook-goo)">
+          <Stream d={stream} reach={reach} count={26} speed={0.9} size={13} jitter={6} color={palette.primary} seed="wrist" />
+          {letters.map((l, i) => {
+            const m = progress(frame, meltAt + i * 5, 34, ease.inOutCubic);
+            const x = bubble[0] + l.dx;
+            const y = bubble[1] + 50;
+            return (
+              <g key={i} opacity={remIn > 0 ? Math.min(1, remIn) * (1 - progress(frame, meltAt + 26 + i * 5, 12)) : 0}>
+                <text
+                  x={x}
+                  y={y}
+                  textAnchor="middle"
+                  fill={palette.primary}
+                  transform={`translate(${x} ${y}) scale(${0.5 + 0.5 * remIn}, ${(0.5 + 0.5 * remIn) * (1 + m * 0.5)}) translate(${-x} ${-y + m * 60})`}
+                  style={{ fontFamily: fonts.sans, fontWeight: 700, fontSize: 140, letterSpacing: "-0.02em" }}
+                >
+                  {l.ch}
+                </text>
+                {[0, 1].map((k) => {
+                  const fall = m * (180 + random(`d${i}${k}`) * 260);
+                  const dx = (random(`dx${i}${k}`) - 0.5) * 60;
+                  return m > 0 ? (
+                    <g key={k}>
+                      <circle cx={x + dx} cy={y + 6 + fall * 0.4} r={10 * (1 - m * 0.3)} fill={palette.primary} />
+                      <circle cx={x + dx} cy={y + 10 + fall} r={(13 + random(`dr${i}${k}`) * 6) * (1 - m * 0.35)} fill={palette.primary} />
+                    </g>
+                  ) : null;
+                })}
+              </g>
+            );
+          })}
+          {new Array(10).fill(0).map((_, i) => {
+            const a = (i / 10) * Math.PI * 2;
+            const d = R + pop * (120 + random(`pp${i}`) * 140);
+            return pop > 0 ? (
+              <circle key={i} cx={bubble[0] + Math.cos(a) * d} cy={bubble[1] + Math.sin(a) * d + pop * 80} r={10 * (1 - pop)} fill={palette.primary} />
+            ) : null;
+          })}
         </g>
-        <Label x={CX} y={cy - 480} p={progress(frame, 6, 22, ease.outExpo)}>
-          Your sleep tracker
-        </Label>
+        {R > 1 && pop < 1 ? (
+          <path
+            d={blobPath(bubble[0], bubble[1], R * (1 + pop * 0.15), R * (1 + pop * 0.15), "bubble", t * 0.7, 0.05 + progress(frame, meltAt, 30) * 0.08)}
+            fill="rgba(255,255,255,0.05)"
+            stroke={palette.primary}
+            strokeWidth={6}
+            opacity={1 - pop}
+          />
+        ) : null}
       </Stage>
-      <Kinetic y={400} at={1.5} text="Something more *important.*" size={104} />
+      <Kinetic y={360} at={1.4} text="Something more *important.*" size={92} />
     </AbsoluteFill>
   );
 };
 
-/* 2. One tap away: the phone glides up, the button squashes and springs back, the screen flips to the week. */
+/* 2. One tap away: they sit up with their phone; a tap ripples out and droplets fly up into the week. */
 const Tap: React.FC = () => {
   const frame = useCurrentFrame();
   const palette = usePalette();
-  const screen = { x: CX - 220, y: 640, w: 440, h: 860 };
-  const enter = progress(frame, 0, 28, ease.outExpo);
-  const outline = progress(frame, 4, 26, ease.outQuart);
-  const tapAt = sec(2.3);
+  const t = frame / 30;
+  const S = 1.5;
+  const base = pose({ x: 360, y: 1250, lean: -6, head: -4, legL: [96, -92], legR: [90, -86], armL: [40, 50], armR: [34, 56] });
+  const hold: Pose = { ...base, head: -16, armL: [34, 96], armR: [26, 102] };
+  const p = posesAt(frame, [[4, base], [26, hold, ease.outBack]]);
+  p.y += Math.sin(frame * 0.08) * 2;
+  const r = rig(p, S);
+  const wrist = r.armR[2];
+  const tapAt = sec(2.2);
   const press = progress(frame, tapAt - 5, 5, ease.outQuart);
-  const release = progress(frame, tapAt, 26, ease.outElastic);
-  const buttonScale = 1 - 0.1 * press + 0.1 * release;
-  const ripple = progress(frame, tapAt, 26, ease.outExpo);
-  const flip = progress(frame, tapAt + 4, 24, ease.inOutCubic);
-  const lift = Math.sin(flip * Math.PI) * 0.08;
-  const hypP = progress(frame, 14, 26, ease.outQuart);
-  const levels = [0, 1, 2, 3, 2, 1, 2, 3, 3, 2, 1, 2, 1, 0];
-  const stepW = 320 / levels.length;
-  const hyp = levels.map((l, i) => `${i === 0 ? "M" : "L"} ${i * stepW} ${l * 40} H ${(i + 1) * stepW}`).join(" ");
-  const week = [0, 70, -30, 120, 40, 170, 10];
+  const release = progress(frame, tapAt, 28, ease.outElastic);
+  const phoneScale = 1 - 0.08 * press + 0.08 * release;
+  const flash = progress(frame, tapAt, 4) * (1 - progress(frame, tapAt + 4, 20));
+  const offsets = [0, 40, -20, 70, 20, 100, 10];
+  const widths = [200, 190, 210, 180, 200, 170, 205];
+  const phone: Pt = [wrist[0] + 6, wrist[1] - 30];
   return (
     <AbsoluteFill>
-      <div
-        style={{
-          position: "absolute",
-          left: screen.x,
-          top: screen.y,
-          width: screen.w,
-          height: screen.h,
-          transform: `translateY(${(1 - enter) * 700}px) rotate(${(1 - enter) * 10}deg) scale(${1 + lift})`,
-        }}
-      >
-        <svg width={screen.w} height={screen.h} style={{ position: "absolute", overflow: "visible" }}>
-          <rect
-            x={0}
-            y={0}
-            width={screen.w}
-            height={screen.h}
-            rx={70}
-            pathLength={1}
-            strokeDasharray="1 1"
-            strokeDashoffset={1 - outline}
-            fill="none"
-            stroke={palette.primary}
-            strokeWidth={5}
-          />
-        </svg>
-        <div style={{ position: "absolute", inset: 0, perspective: 1400 }}>
-          <div style={{ position: "absolute", inset: 0, transform: `rotateY(${flip * 180}deg)`, transformStyle: "preserve-3d" }}>
-            <svg width={screen.w} height={screen.h} style={{ position: "absolute", backfaceVisibility: "hidden" }}>
-              <text x={60} y={130} fill={palette.muted} opacity={hypP} style={{ ...type.label, fontSize: 28 }}>
-                LAST NIGHT
-              </text>
-              <g transform="translate(60 200)">
-                <Draw d={hyp} p={hypP} stroke={palette.muted} width={4} />
-              </g>
-              {[0, 1, 2].map((i) => {
-                const p = progress(frame, 20 + i * 4, 20, ease.outExpo);
-                return <rect key={i} x={60} y={420 + i * 70} width={(320 - i * 60) * p} height={26} rx={13} fill={palette.muted} opacity={0.18} />;
-              })}
-              <g transform={`translate(220 752) scale(${buttonScale}) translate(-220 -752)`} opacity={progress(frame, 30, 12)}>
-                <rect x={60} y={720} width={320} height={64} rx={32} fill="none" stroke={palette.primary} strokeWidth={3} />
-                <text x={220} y={762} textAnchor="middle" fill={palette.primary} style={{ fontFamily: fonts.sans, fontSize: 28 }}>
-                  This week
-                </text>
-              </g>
-              <circle cx={220} cy={752} r={20 + ripple * 160} fill="none" stroke={palette.primary} strokeWidth={4} opacity={(1 - ripple) * 0.8} />
-              <circle cx={220} cy={752} r={10 + ripple * 90} fill="none" stroke={palette.primary} strokeWidth={3} opacity={(1 - ripple) * 0.5} />
-            </svg>
-            <svg width={screen.w} height={screen.h} style={{ position: "absolute", backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-              <text x={60} y={130} fill={palette.muted} style={{ ...type.label, fontSize: 28 }}>
-                THIS WEEK
-              </text>
-              {week.map((o, i) => {
-                const p = progress(frame, tapAt + 16 + i * 2, 20, ease.outBack);
-                return (
-                  <rect
-                    key={i}
-                    x={110 + o * 0.6 + (1 - p) * 160}
-                    y={200 + i * 80}
-                    width={200}
-                    height={34}
-                    rx={17}
-                    fill={palette.primary}
-                    opacity={0.35 * Math.min(1, p)}
-                  />
-                );
-              })}
-            </svg>
-          </div>
-        </div>
-      </div>
-      <Kinetic y={430} at={0.3} text="One tap *away.*" size={110} />
+      <Stage>
+        <defs>
+          <Goo id="tap-goo" blur={10} />
+        </defs>
+        <rect x={30} y={1300} width={440} height={130} rx={65} fill={BED} stroke="rgba(255,255,255,0.12)" strokeWidth={3} />
+        <path d={liquidPill(40, 1280, 240, 76, "tapBlanket", t * 0.5, 4)} fill={BLANKET} />
+        <circle cx={r.head[0] + 40} cy={r.head[1] + 30} r={190} fill={palette.primary} opacity={0.05 + flash * 0.1} />
+        <Person p={p} s={S} />
+        <g transform={`translate(${phone[0]} ${phone[1]}) rotate(-22) scale(${phoneScale * 1.25})`}>
+          <rect x={-40} y={-74} width={80} height={140} rx={24} fill={DEVICE} stroke={palette.primary} strokeWidth={4} />
+          <rect x={-30} y={-62} width={60} height={116} rx={16} fill={palette.primary} opacity={0.12 + flash * 0.5} />
+        </g>
+        {[0, 1, 2].map((k) => {
+          const rp = progress(frame, tapAt + k * 5, 30, ease.outExpo);
+          return rp > 0 && rp < 1 ? (
+            <path
+              key={k}
+              d={blobPath(phone[0], phone[1], 40 + rp * 240, 40 + rp * 240, `rip${k}`, t, 0.08)}
+              fill="none"
+              stroke={palette.primary}
+              strokeWidth={4}
+              opacity={(1 - rp) * 0.6}
+            />
+          ) : null;
+        })}
+        <Text x={600} y={590} label p={progress(frame, tapAt + 30, 20, ease.outExpo)}>
+          This week
+        </Text>
+        <g filter="url(#tap-goo)">
+          {offsets.map((o, i) => {
+            const tx = 600 + o;
+            const ty = 640 + i * 62;
+            const start = tapAt + 3 + i * 3;
+            const m = progress(frame, start, 22, ease.inOutCubic);
+            if (m <= 0) return null;
+            const grow = progress(frame, start + 20, 30, ease.outElastic);
+            const cx = (1 - m) * (1 - m) * phone[0] + 2 * (1 - m) * m * (phone[0] + 60) + m * m * (tx + 17);
+            const cy = (1 - m) * (1 - m) * phone[1] + 2 * (1 - m) * m * (ty - 260) + m * m * (ty + 17);
+            return grow > 0 ? (
+              <rect key={i} x={tx} y={ty} width={34 + grow * (widths[i] - 34)} height={34} rx={17} fill={palette.primary} opacity={0.75} />
+            ) : (
+              <circle key={i} cx={cx} cy={cy} r={17} fill={palette.primary} opacity={0.75} />
+            );
+          })}
+        </g>
+      </Stage>
+      <Kinetic y={380} at={0.3} text="One tap *away.*" size={100} />
     </AbsoluteFill>
   );
 };
 
-/* 3. Estimates: a scanner sweeps in live pulse and movement; the stage graph wobbles, unsure. */
+/* 3. Estimates: pulse and movement pour out of the watch as liquid streams into a jelly that can't hold its shape. */
 const Estimate: React.FC = () => {
   const frame = useCurrentFrame();
   const palette = usePalette();
-  const left = 110;
-  const width = 776;
-  const reveal = progress(frame, 2, 30, ease.outQuart);
-  const period = 260;
-  const beat = "h 90 l 15 -18 l 15 18 h 20 l 12 30 l 16 -150 l 16 170 l 12 -50 h 64";
-  const ecg = `M ${-period} 0 ` + new Array(7).fill(beat).join(" ");
-  const shift = -((frame * 5) % period);
-  const amp = 1 + Math.sin(frame * 0.09) * 0.25;
-  const wiggle = new Array(79)
-    .fill(0)
-    .map((_, i) => {
-      const x = i * 10;
-      const y = noise2D("move", x * 0.006, frame * 0.025) * 46 * amp;
-      return `${i === 0 ? "M" : "L"} ${x} ${y.toFixed(1)}`;
-    })
-    .join(" ");
-  const stages = progress(frame, sec(1.6), 24, ease.outQuart);
-  const levels = [0, 1, 2, 3, 2, 1, 2, 3, 3, 2, 1, 0, 1, 2, 1, 0];
-  const stepW = width / levels.length;
-  const hyp = levels
-    .map((l, i) => {
-      const jy = l * 50 + noise2D("stage", i * 0.7, frame * 0.05) * 22;
-      const jx = noise2D("stagex", i * 0.7, frame * 0.04) * 8;
-      return `${i === 0 ? "M" : "L"} ${(i * stepW + jx).toFixed(1)} ${jy.toFixed(1)} H ${((i + 1) * stepW + jx).toFixed(1)}`;
-    })
-    .join(" ");
-  const scanX = left + width * reveal;
+  const t = frame / 30;
+  const enter = progress(frame, 0, 26, ease.outExpo);
+  const ax = (1 - enter) * -420;
+  const ay = (1 - enter) * 420;
+  const watch: Pt = [290 + ax, 1410 + ay];
+  const heartbeat = (f: number) => 1 + 0.6 * Math.exp(-(f % 26) / 3);
+  const pulsePath = smoothPath([[watch[0] + 10, watch[1] - 60], [330, 1180], [430, 990], [580, 930], [690, 990]]);
+  const movePath = smoothPath([[watch[0] + 60, watch[1] + 10], [580, 1470], [810, 1350], [830, 1190], [770, 1110]]);
+  const pulseReach = progress(frame, 14, 34, ease.outQuart);
+  const moveReach = progress(frame, 22, 34, ease.outQuart);
+  const jelly = progress(frame, 30, 30, ease.outElastic);
+  const wave = new Array(9).fill(0).map((_, i): Pt => {
+    const x = 620 + i * 25;
+    return [x, 1080 + Math.sin(i * 0.9 + t * 3) * 22 + noise2D("wave", i * 0.5, t) * 24];
+  });
   return (
     <AbsoluteFill>
       <Stage>
         <defs>
-          <clipPath id="est-clip">
-            <rect x={left} y={600} width={width * reveal} height={560} />
-          </clipPath>
-          <linearGradient id="scan" x1="0" x2="1">
-            <stop offset="0" stopColor={palette.primary} stopOpacity="0" />
-            <stop offset="1" stopColor={palette.primary} stopOpacity="0.25" />
-          </linearGradient>
+          <Goo id="est-goo" blur={11} />
         </defs>
-        <Label x={left} y={640} anchor="start" p={progress(frame, 2, 20, ease.outExpo)}>
-          Pulse
-        </Label>
-        <Label x={left} y={960} anchor="start" p={progress(frame, 8, 20, ease.outExpo)}>
-          Movement
-        </Label>
-        <g clipPath="url(#est-clip)">
-          <path d={ecg} transform={`translate(${left + shift} 790)`} fill="none" stroke={palette.primary} strokeWidth={4} strokeLinejoin="round" />
-          <path d={wiggle} transform={`translate(${left} 1060)`} fill="none" stroke={palette.primary} strokeWidth={4} opacity={0.85} />
+        <path d={smoothPath([[-80 + ax, 1780 + ay], [120 + ax, 1580 + ay], [watch[0], watch[1]]])} fill="none" stroke={palette.muted} strokeWidth={120} strokeLinecap="round" />
+        <circle cx={watch[0]} cy={watch[1]} r={58} fill={DEVICE} stroke={palette.primary} strokeWidth={5} />
+        <circle cx={watch[0]} cy={watch[1]} r={22 * heartbeat(frame)} fill={palette.primary} opacity={0.8} />
+        <g filter="url(#est-goo)">
+          <Stream d={pulsePath} reach={pulseReach} count={34} speed={0.5} size={14} jitter={5} color={palette.primary} seed="pulse" pulse={heartbeat} />
+          <Stream d={movePath} reach={moveReach} count={30} speed={0.35} size={13} jitter={22} color={palette.primary} seed="move" />
         </g>
-        {reveal < 0.995 ? (
-          <>
-            <rect x={scanX - 70} y={680} width={70} height={460} fill="url(#scan)" opacity={0.6} />
-            <line x1={scanX} y1={680} x2={scanX} y2={1140} stroke={palette.primary} strokeWidth={2} opacity={0.5} />
-          </>
+        {jelly > 0 ? (
+          <path
+            d={blobPath(720, 1080, 130 * jelly, 116 * jelly, "jelly", t * 1.3, 0.26)}
+            fill={palette.primary}
+            fillOpacity={0.16}
+            stroke={palette.primary}
+            strokeOpacity={0.5}
+            strokeWidth={4}
+            style={{ filter: "blur(1.5px)" }}
+          />
         ) : null}
-        <Label x={left} y={1230} anchor="start" p={stages}>
+        {jelly > 0.2 ? (
+          <path d={smoothPath(wave)} fill="none" stroke={palette.primary} strokeWidth={6} strokeLinecap="round" opacity={0.7} style={{ filter: "blur(2.5px)" }} />
+        ) : null}
+        <Text x={470} y={880} label p={progress(frame, 24, 22, ease.outExpo)}>
+          Pulse
+        </Text>
+        <Text x={560} y={1410} label p={progress(frame, 32, 22, ease.outExpo)}>
+          Movement
+        </Text>
+        <Text x={720} y={1250} label p={progress(frame, 44, 22, ease.outExpo)}>
           Estimated stages
-        </Label>
-        <g transform={`translate(${left} 1290)`} opacity={Math.min(1, stages) * 0.8} style={{ filter: "blur(3px)" }}>
-          <Draw d={hyp} p={stages} stroke={palette.muted} width={6} tip={false} />
-        </g>
+        </Text>
       </Stage>
-      <Kinetic y={430} at={0.2} text="Stages are *estimated.*" size={104} />
+      <Kinetic y={380} at={0.2} text="Stages are *estimated.*" size={92} />
     </AbsoluteFill>
   );
 };
 
-/* 4. Timing: the sleep bar snaps open with overshoot; crisp markers drop in; a light sweep crosses the glass. */
+/* 4. Timing: one droplet falls as they drift off, a second as they wake; liquid fills a crisp tube between. */
 const Timing: React.FC = () => {
   const frame = useCurrentFrame();
   const palette = usePalette();
-  const bar = progress(frame, 4, 24, ease.outBack);
-  const a = progress(frame, sec(2.1), 18, ease.outExpo);
-  const b = progress(frame, sec(3.8), 18, ease.outExpo);
-  const sweep = progress(frame, 18, 40, ease.inOutCubic);
-  const y = 1080;
+  const t = frame / 30;
+  const asleepAt = sec(2.15);
+  const wakeAt = sec(3.85);
+  const S = 1.35;
+  const awake = lying(640, 1250);
+  const asleep: Pose = { ...awake, eyes: 0, head: -8 };
+  const stretch: Pose = { ...awake, eyes: 1, armR: [135, 12], armL: [142, 4], legL: [6, 0], legR: [-6, 0] };
+  const p = breathe(
+    posesAt(frame, [
+      [asleepAt - 12, awake],
+      [asleepAt, asleep],
+      [wakeAt, asleep],
+      [wakeAt + 18, stretch, ease.outBack],
+      [wakeAt + 60, { ...stretch, armR: [120, 30], armL: [126, 20] }],
+    ]),
+    frame,
+  );
   const x0 = 170;
   const x1 = 830;
-  const half = ((x1 - x0) / 2) * bar;
-  const marker = (x: number, p: number, label: string) => (
-    <g opacity={p > 0 ? 1 : 0}>
-      <Draw d={`M ${x} ${y - 190} V ${y + 150}`} p={p} width={5} />
-      <circle cx={x} cy={y - 190} r={13 * Math.min(1, p * 1.3)} fill={palette.primary} />
-      <circle cx={x} cy={y - 190} r={13 + p * 40} fill="none" stroke={palette.primary} strokeWidth={3} opacity={(1 - p) * 0.8} />
-      <text
-        x={x}
-        y={y - 232 + (1 - p) * 40}
-        textAnchor="middle"
-        fill={palette.primary}
-        opacity={Math.min(1, p)}
-        style={{ fontFamily: fonts.sans, fontSize: 46, fontWeight: 500 }}
-      >
-        {label}
-      </text>
-    </g>
-  );
+  const ty = 800;
+  const fill = progress(frame, asleepAt, wakeAt - asleepAt, ease.inOutCubic);
+  const drop = (x: number, land: number) => {
+    const f = progress(frame, land - 13, 13, ease.inExpo);
+    const splash = progress(frame, land, 20, ease.outExpo);
+    if (f <= 0) return null;
+    return (
+      <g>
+        {f < 1 ? <ellipse cx={x} cy={lerp(520, ty, f)} rx={20} ry={20 + f * 10} fill={palette.primary} /> : null}
+        {new Array(6).fill(0).map((_, i) => {
+          const a = -Math.PI * (0.15 + (i / 5) * 0.7);
+          return splash > 0 && splash < 1 ? (
+            <circle key={i} cx={x + Math.cos(a) * splash * 90} cy={ty + Math.sin(a) * splash * 70 + splash * splash * 40} r={9 * (1 - splash)} fill={palette.primary} />
+          ) : null;
+        })}
+      </g>
+    );
+  };
   return (
     <AbsoluteFill>
       <Stage>
         <defs>
-          <clipPath id="bar-clip">
-            <rect x={CX - half} y={y - 60} width={Math.max(0, half * 2)} height={120} rx={60} />
-          </clipPath>
-          <linearGradient id="sweep" x1="0" x2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#fff" stopOpacity="0.22" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
+          <Goo id="time-goo" blur={10} />
         </defs>
-        <rect
-          x={CX - half}
-          y={y - 60}
-          width={Math.max(0, half * 2)}
-          height={120}
-          rx={60}
-          fill="rgba(255,255,255,0.09)"
-          stroke="rgba(255,255,255,0.22)"
-          strokeWidth={3}
-        />
-        <rect clipPath="url(#bar-clip)" x={lerp(x0 - 300, x1, sweep)} y={y - 60} width={260} height={120} fill="url(#sweep)" />
-        {marker(x0, a, "Fell asleep")}
-        {marker(x1, b, "Woke up")}
+        <rect x={x0} y={ty - 36} width={x1 - x0} height={72} rx={36} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" strokeWidth={3} />
+        <g filter="url(#time-goo)">
+          {fill > 0 ? <path d={liquidPill(x0 + 6, ty - 30, Math.max(60, (x1 - x0 - 12) * fill), 60, "tube", t, 4 * (1 - fill) + 1)} fill={palette.primary} /> : null}
+          {drop(x0 + 36, asleepAt)}
+          {drop(x1 - 36, wakeAt)}
+        </g>
+        <Text x={x0} y={ty - 70} anchor="start" p={progress(frame, asleepAt, 20, ease.outExpo)}>
+          Fell asleep
+        </Text>
+        <Text x={x1} y={ty - 70} anchor="end" p={progress(frame, wakeAt, 20, ease.outExpo)}>
+          Woke up
+        </Text>
+        <Sleeper p={p} s={S} bedX={110} bedEnd={910} seed="blanket2" />
+        <Dream x={rig(p, S).head[0] + 30} y={rig(p, S).head[1] - 80} t={frame - asleepAt} color={palette.primary} intensity={frame < wakeAt ? 1 : 0} />
       </Stage>
-      <Kinetic y={470} at={0.2} text="But timing is *precise.*" size={104} />
+      <Kinetic y={380} at={0.2} text="But timing is *precise.*" size={92} />
     </AbsoluteFill>
   );
 };
 
-/* 5. The study: dots pop out in a ripple, the counter races to 60,000, then the dots stream into two bars. */
+/* 5. The study: a crowd of people pops up while the count races to 60,000; then they melt and pour into two bars. */
 const Study: React.FC = () => {
   const frame = useCurrentFrame();
   const palette = usePalette();
-  const cols = 34;
-  const rows = 58;
-  const gap = 23;
-  const gx = CX - ((cols - 1) * gap) / 2;
-  const gy = 960 - ((rows - 1) * gap) / 2;
+  const t = frame / 30;
   const count = Math.round(progress(frame, 6, sec(2), ease.outExpo) * 60000);
   const compareAt = sec(4.1);
-  const counterIn = progress(frame, 4, 24, ease.outBack);
-  const counterOut = progress(frame, compareAt - 12, 16, ease.inExpo);
-  const solid = progress(frame, compareAt + 30, 16, ease.outQuart);
-  const labels = progress(frame, compareAt + 6, 20, ease.outExpo);
-  const steadyLen = 760;
-  const hoursLen = 420;
+  const counterIn = progress(frame, 4, 26, ease.outBack);
+  const counterOut = progress(frame, compareAt - 12, 16, ease.inOutCubic);
   const bars = [
-    { y: 1000, len: steadyLen },
-    { y: 1230, len: hoursLen },
+    { y: 980, len: 760, color: palette.primary, label: "Steady timing" },
+    { y: 1210, len: 420, color: palette.muted, label: "Hours slept" },
   ];
-  const dots = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const i = r * cols + c;
-      const gxp = gx + c * gap;
-      const gyp = gy + r * gap;
-      const dist = Math.hypot(gxp - CX, gyp - 960) / 900;
-      const pop = progress(frame, 4 + dist * 26, 16, ease.outBack);
+  const fills = bars.map((_, b) => progress(frame, compareAt + 12 + b * 6, 34, ease.outQuart));
+  const crowd: React.ReactNode[] = [];
+  const droplets: React.ReactNode[][] = [[], []];
+  for (let r = 0; r < 11; r++) {
+    for (let c = 0; c < 10; c++) {
+      const i = r * 10 + c;
+      const x = 150 + c * 77;
+      const y = 590 + r * 82;
+      const dist = Math.hypot(x - CX, y - 990) / 700;
+      const pop = progress(frame, 4 + dist * 24, 18, ease.outBack);
       if (pop <= 0) continue;
-      // Two of every three dots stream into the "steady timing" bar.
-      const target = bars[i % 3 === 0 ? 1 : 0];
-      const tx = 110 + random(`tx${i}`) * target.len;
-      const ty = target.y + 8 + random(`ty${i}`) * 48;
-      const m = progress(frame, compareAt - 4 + random(`m${i}`) * 16, 26, ease.inOutCubic);
-      const arc = Math.sin(m * Math.PI) * (random(`a${i}`) - 0.5) * 220;
-      dots.push(
-        <circle
-          key={i}
-          cx={lerp(gxp, tx, m) + arc}
-          cy={lerp(gyp, ty, m)}
-          r={3.2 * pop * (1 + m * 0.4)}
-          fill={m > 0 ? palette.primary : palette.muted}
-          opacity={(0.45 + m * 0.4) * Math.min(1, pop) * (1 - solid)}
-        />,
+      const startMelt = compareAt - 8 + random(`ml${i}`) * 14;
+      const melt = progress(frame, startMelt, 10, ease.inOutCubic);
+      crowd.push(
+        <Mini key={i} x={x} y={y} s={pop * (1 - melt)} color={palette.muted} sway={Math.sin(frame * 0.08 + c * 0.5 + r * 0.3) * 6} opacity={0.85} />,
       );
+      const b = i % 3 === 0 ? 1 : 0;
+      const m = progress(frame, startMelt + 6, 24, ease.inOutCubic);
+      if (melt > 0 && m < 1) {
+        const bar = bars[b];
+        const tx = 150 + random(`tx${i}`) * (bar.len - 80);
+        const tyy = bar.y + 36;
+        const lift = Math.sin(m * Math.PI) * -120;
+        droplets[b].push(<circle key={i} cx={lerp(x, tx, m)} cy={lerp(y, tyy, m) + lift} r={12 * melt} fill={bar.color} />);
+      }
     }
   }
-  const row = (y: number, label: string, len: number, strong: boolean) => (
-    <g>
-      <text
-        x={110 - (1 - labels) * 60}
-        y={y - 34}
-        opacity={labels}
-        fill={strong ? palette.primary : palette.muted}
-        style={{ fontFamily: fonts.sans, fontSize: 46, fontWeight: 500 }}
-      >
-        {label}
-      </text>
-      <rect x={110} y={y} width={len} height={64} rx={32} fill={strong ? palette.primary : palette.muted} opacity={solid * (strong ? 0.9 : 0.35)} />
-    </g>
-  );
   return (
     <AbsoluteFill>
       <Stage>
-        {dots}
-        <rect
-          x={CX - 330}
-          y={830}
-          width={660}
-          height={260}
-          rx={130}
-          fill={palette.ground}
-          opacity={0.85 * Math.min(1, counterIn) * (1 - counterOut)}
-          style={{ filter: "blur(30px)" }}
-        />
-        <g
-          opacity={Math.min(1, counterIn) * (1 - counterOut)}
-          transform={`translate(${CX} ${960 - counterOut * 260}) scale(${(0.7 + 0.3 * counterIn) * (1 - counterOut * 0.4)}) translate(${-CX} -960)`}
-        >
-          <text x={CX} y={1000} textAnchor="middle" fill={palette.primary} style={{ fontFamily: fonts.serif, fontSize: 210, letterSpacing: "-0.02em" }}>
+        <defs>
+          <Goo id="study-goo-0" blur={10} />
+          <Goo id="study-goo-1" blur={10} />
+        </defs>
+        {crowd}
+        {bars.map((bar, b) => (
+          <g key={b}>
+            <Text x={110} y={bar.y - 30} anchor="start" color={b === 0 ? palette.primary : palette.muted} p={progress(frame, compareAt + 4 + b * 6, 22, ease.outExpo)}>
+              {bar.label}
+            </Text>
+            <g filter={`url(#study-goo-${b})`} opacity={b === 0 ? 1 : 0.6}>
+              {fills[b] > 0 ? <path d={liquidPill(110, bar.y, Math.max(72, bar.len * fills[b]), 72, `bar${b}`, t, 5)} fill={bar.color} /> : null}
+              {droplets[b]}
+            </g>
+          </g>
+        ))}
+        <Text x={110} y={1370} anchor="start" size={40} color={palette.muted} p={progress(frame, compareAt + 40, 22, ease.outExpo)}>
+          Better predictor of long-term health
+        </Text>
+        <g opacity={Math.min(1, counterIn) * (1 - counterOut)} transform={`translate(${CX} ${990 - counterOut * 200}) scale(${0.7 + 0.3 * counterIn}) translate(${-CX} -990)`}>
+          <path d={blobPath(CX, 990, 360, 150, "cnt", t, 0.06)} fill={palette.ground} opacity={0.9} style={{ filter: "blur(18px)" }} />
+          <text x={CX} y={1040} textAnchor="middle" fill={palette.primary} style={{ fontFamily: fonts.sans, fontWeight: 700, fontSize: 176, letterSpacing: "-0.03em" }}>
             {count.toLocaleString("en-US")}
           </text>
-          <Label x={CX} y={1080} p={progress(frame, 14, 22, ease.outExpo)}>
+          <Text x={CX} y={1105} label p={progress(frame, 14, 22, ease.outExpo)}>
             People in one study
-          </Label>
+          </Text>
         </g>
-        {row(1000, "Steady timing", steadyLen, true)}
-        {row(1230, "Hours slept", hoursLen, false)}
-        <text x={110} y={1420 + (1 - solid) * 20} fill={palette.muted} opacity={solid} style={{ ...type.caption, fontSize: 40 }}>
-          Better predictor of long-term health
-        </text>
       </Stage>
-      <Kinetic y={470} at={4.3} text="Steady *beats* long." size={110} />
+      <Kinetic y={380} at={4.3} text="Steady *beats* long." size={100} />
     </AbsoluteFill>
   );
 };
 
-/* 6. The payoff: bedtimes swing in, a bracket measures it, then each bar springs into line on amber. */
+/* 6. The payoff: seven sleepers in seven beds drift in at different bedtimes, then flow into line on amber. */
 const Week: React.FC = () => {
   const frame = useCurrentFrame();
   const palette = usePalette();
+  const t = frame / 30;
   const days = ["M", "T", "W", "T", "F", "S", "S"];
   const offsets = [10, 110, -40, 180, 60, 240, 0];
-  const widths = [470, 420, 500, 390, 450, 360, 480];
-  const target = 300;
+  const widths = [450, 400, 470, 370, 420, 330, 450];
+  const target = 330;
   const alignAt = sec(5.2);
-  const guide = progress(frame, alignAt - 10, 22, ease.outExpo);
-  const bracketP = progress(frame, sec(2.4), 22, ease.outExpo);
-  const lefts = offsets.map((o, i) => lerp(300 + o, target, progress(frame, alignAt + i * 3, 30, ease.outBack)));
-  const spreadMin = Math.min(...lefts);
-  const spreadMax = Math.max(...lefts);
-  const spread = spreadMax - spreadMin;
-  const settled = progress(frame, alignAt + 40, 20, ease.outExpo);
-  const by = 1450;
+  const guide = progress(frame, alignAt - 12, 26, ease.outExpo);
+  const bracketP = progress(frame, sec(2.4), 24, ease.outExpo);
+  const moves = offsets.map((_, i) => progress(frame, alignAt + i * 3, 32, ease.outBack));
+  const lefts = offsets.map((o, i) => lerp(target + o, target, moves[i]));
+  const minL = Math.min(...lefts);
+  const maxL = Math.max(...lefts);
+  const spread = maxL - minL;
+  const settled = progress(frame, alignAt + 42, 22, ease.outExpo);
+  const by = 1420;
   const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
   return (
     <AbsoluteFill>
       <Stage>
-        <Label x={110} y={640} anchor="start" p={progress(frame, 6, 22, ease.outExpo)}>
+        <defs>
+          <Goo id="week-goo" blur={8} />
+        </defs>
+        <Text x={110} y={612} anchor="start" label p={progress(frame, 6, 22, ease.outExpo)}>
           Your bedtimes
-        </Label>
-        <Draw d={`M ${target} 670 V 1400`} p={guide} stroke={palette.amber} width={5} />
-        <rect
-          x={target - 30}
-          y={670}
-          width={60}
-          height={Math.max(0, 730 * Math.min(1, guide))}
-          fill={palette.amber}
-          opacity={0.06 + settled * 0.06}
-          style={{ filter: "blur(18px)" }}
-        />
+        </Text>
+        <rect x={target - 34} y={650} width={68} height={Math.max(0, 740 * Math.min(1, guide))} rx={34} fill={palette.amber} opacity={0.07 + settled * 0.07} style={{ filter: "blur(16px)" }} />
+        <g filter="url(#week-goo)">
+          <Draw d={`M ${target} 650 V 1390`} p={guide} stroke={palette.amber} width={8} tip={false} />
+          {guide > 0.95 ? <circle cx={target} cy={1390 + Math.sin(frame * 0.1) * 4} r={14 + settled * 4} fill={palette.amber} /> : null}
+        </g>
         {days.map((d, i) => {
-          const y = 690 + i * 100;
-          const enter = progress(frame, 8 + i * 3, 24, ease.outBack);
-          const x = lefts[i] + (1 - enter) * 420;
-          const pulse = settled * Math.max(0, Math.sin((frame - alignAt - 40 - i * 3) * 0.15)) * 0.4;
+          const y = 680 + i * 102;
+          const enter = progress(frame, 8 + i * 3, 26, ease.outBack);
+          const x = lefts[i] + (1 - enter) * 440;
+          const slosh = Math.sin(moves[i] * Math.PI) * 12 + (1 - Math.min(1, enter)) * 10;
+          const head: Pt = [x + 38, y + 35];
           return (
             <g key={i} opacity={Math.min(1, enter * 1.5)}>
-              <text x={110} y={y + 44} fill={palette.muted} style={{ fontFamily: fonts.sans, fontSize: 38, fontWeight: 500 }}>
+              <text x={110} y={y + 48} fill={palette.muted} style={{ fontFamily: fonts.sans, fontSize: 38, fontWeight: 500 }}>
                 {d}
               </text>
-              <rect x={x} y={y} width={widths[i]} height={60} rx={30} fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.24)" strokeWidth={3} />
-              <circle cx={x} cy={y + 30} r={11 + pulse * 8} fill={palette.primary} />
+              <path d={liquidPill(x, y, widths[i], 70, `bed${i}`, t * 0.6, 3 + slosh)} fill={BLANKET} stroke="rgba(255,255,255,0.18)" strokeWidth={3} />
+              <circle cx={head[0]} cy={head[1]} r={24} fill={palette.muted} />
+              <ellipse cx={head[0] + 2} cy={head[1] - 6} rx={5} ry={1.8} fill={palette.ground} />
+              {settled > 0 ? <Dream x={head[0] + 10} y={head[1] - 30} t={frame - alignAt - 42 - i * 6} color={palette.primary} intensity={settled * 0.7} /> : null}
             </g>
           );
         })}
         <g opacity={interpolate(spread, [10, 80], [0, 1], clamp)}>
-          <Draw d={`M ${spreadMin} ${by - 22} V ${by} H ${spreadMax} V ${by - 22}`} p={bracketP} width={4} tip={false} />
-          <text
-            x={(spreadMin + spreadMax) / 2}
-            y={by + 62 + (1 - Math.min(1, bracketP)) * 20}
-            textAnchor="middle"
-            fill={palette.primary}
-            opacity={Math.min(1, bracketP) * interpolate(spread, [120, 200], [0, 1], clamp)}
-            style={{ fontFamily: fonts.sans, fontSize: 42, fontWeight: 500 }}
-          >
+          <Draw
+            d={smoothPath([[minL, by - 26], [minL + 6, by - 6], [minL + 26, by], [maxL - 26, by], [maxL - 6, by - 6], [maxL, by - 26]])}
+            p={bracketP}
+            width={5}
+            tip={false}
+          />
+          <Text x={(minL + maxL) / 2} y={by + 60} p={Math.min(1, bracketP) * interpolate(spread, [120, 200], [0, 1], clamp)} size={42}>
             Swings over an hour
-          </text>
+          </Text>
         </g>
-        <text
-          x={target}
-          y={by + 62 + (1 - settled) * 24}
-          textAnchor="middle"
-          fill={palette.amber}
-          opacity={settled}
-          style={{ fontFamily: fonts.sans, fontSize: 42, fontWeight: 500 }}
-        >
+        <Text x={target} y={by + 60} p={settled} size={42} color={palette.amber}>
           Same time, every night
-        </text>
+        </Text>
       </Stage>
-      <Kinetic y={430} at={0.3} out={4.7} text="Look at your *bedtimes.*" size={104} />
-      <Kinetic y={430} at={5.2} text="Shrink the *swing.*" size={110} />
+      <Kinetic y={380} at={0.3} out={4.7} text="Look at your *bedtimes.*" size={92} />
+      <Kinetic y={380} at={5.2} text="Shrink the *swing.*" size={100} />
     </AbsoluteFill>
   );
 };
 
-/* 7. Close. */
-const Close: React.FC = () => <Kinetic y={900} at={0.15} text="Not your *REM.*" size={150} />;
+/* 7. Close: one peaceful sleeper. */
+const Close: React.FC = () => {
+  const frame = useCurrentFrame();
+  const palette = usePalette();
+  const s = 1.05;
+  const p = breathe(lying(590, 1150, { eyes: 0, head: -8 }), frame);
+  return (
+    <AbsoluteFill>
+      <Stage>
+        <Sleeper p={p} s={s} bedX={200} bedEnd={830} seed="blanket3" />
+        <Dream x={rig(p, s).head[0] + 24} y={rig(p, s).head[1] - 70} t={frame} color={palette.primary} />
+      </Stage>
+      <Kinetic y={760} at={0.15} text="Not your *REM.*" size={130} />
+    </AbsoluteFill>
+  );
+};
 
 export const SleepTrackers: React.FC<{ supers: boolean }> = ({ supers }) => (
   <PaletteContext.Provider value={palettes.night}>
     <SupersContext.Provider value={supers}>
       <AbsoluteFill style={{ backgroundColor: palettes.night.ground }}>
-        <Starfield surges={surges} />
+        <FluidBackground />
         <Beat from={BEATS.hook} to={BEATS.tap + OVERLAP} first>
           <Hook />
         </Beat>
@@ -524,7 +565,11 @@ export const SleepTrackers: React.FC<{ supers: boolean }> = ({ supers }) => (
         <Sequence from={sec(BEATS.cta)}>
           <WaitlistPanel headline="A coach for *steadier nights.*" />
         </Sequence>
+        {HANDOFFS.map((h, i) => (
+          <LiquidWipe key={i} at={sec(h) + 6} seed={`w${i}`} />
+        ))}
       </AbsoluteFill>
     </SupersContext.Provider>
   </PaletteContext.Provider>
 );
+

@@ -19,14 +19,20 @@ Remotion project for short-form 9:16 promo reels (IG Reels / TikTok / Shorts) fo
 
 ## Layout
 - `src/brand/theme.ts` — palettes (night / evening / morning), type scale, safe zones, easing, motion durations, `sec()`. Single source of truth for brand values.
-- `src/brand/fonts.ts` — loads Newsreader + Instrument Sans (variable TTFs in `public/brand/fonts/`).
+- `src/brand/fonts.ts` — loads Instrument Sans. **Sans only; never use the Newsreader serif** (user direction).
 - `src/brand/photos.ts` — named night photos (`photos.moon`, `photos.lake`, ...) with crop positions. No night-road photo exists.
 - `src/components/` — `PhotoBackground` (blur, grain, ground overlay, drift), `Scene` (crossfade + blur dip, punch-in/push-in zoom keys), `Super` (two-tone word reveal: `*key words*` in primary, `accent` makes them amber), `Glass` (`GlassPanel`, `Label`, `StepRow`, `Pill` with tap), `WaitlistPanel` (the closing CTA).
+- Explainer style (see `SleepTrackers.tsx`): `components/Person.tsx` (rubber-hose character rig, `pose`/`posesAt`/`rig`, `Mini` crowd figure, `Dream` bubbles), `components/fluid.tsx` (`FluidBackground`, `LiquidWipe`, `Stream`, `Goo` filter), `components/kinetic.tsx` (`Beat`, liquid `Kinetic` type, pen-tip `Draw`, `Stage`), `lib/shapes.ts` (`smoothPath`, `blobPath`, `liquidPill`).
 - `src/compositions/` — one file per reel; register each in `src/Root.tsx` twice: master and `-Textless` (`supers: false`).
 - `scripts/stills.mjs` — `node scripts/stills.mjs <CompositionId> <sec> [sec...]` renders stills and a contact sheet to `out/stills/`.
 - `public/` — assets via `staticFile()`: `brand/fonts`, `images` (night photos), `audio`. `screenshots/` is not used for now.
 - `docs/` — creative briefs. The brief and script rules .docx files are in the project root.
 - `out/` — renders (gitignored).
+
+## Style direction (from the user)
+- People in every video; soft, rounded, no harsh corners anywhere; motion that flows like liquid; push boundaries over following the brief literally.
+- Goo filter gotcha: shapes inside a `Goo` group must be fully opaque (put opacity on the group), or they vanish / show seams.
+- Early stage: preview with `--scale=0.5 --crf=28` into `out/preview/`; no full-fidelity renders until the look is approved.
 
 ## Conventions
 - Keep text and panels inside `safe` / `content` (theme.ts) — platform UI covers the top 250, bottom 420 and right 140 px.

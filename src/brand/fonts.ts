@@ -1,15 +1,7 @@
-// Loads Newsreader and Instrument Sans (variable fonts) from public/brand/fonts before any frame renders.
+// Loads Instrument Sans (variable font) from public/brand/fonts before any frame renders.
 import { cancelRender, continueRender, delayRender, staticFile } from "remotion";
 
 const faces = [
-  new FontFace("Newsreader", `url(${staticFile("brand/fonts/Newsreader.ttf")}) format("truetype")`, {
-    weight: "200 800",
-    style: "normal",
-  }),
-  new FontFace("Newsreader", `url(${staticFile("brand/fonts/Newsreader-Italic.ttf")}) format("truetype")`, {
-    weight: "200 800",
-    style: "italic",
-  }),
   new FontFace("Instrument Sans", `url(${staticFile("brand/fonts/InstrumentSans.ttf")}) format("truetype")`, {
     weight: "400 700",
     stretch: "75% 100%",
