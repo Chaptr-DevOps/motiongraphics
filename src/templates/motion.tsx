@@ -68,7 +68,8 @@ export const HeadlineIn: React.FC<{
   accent?: boolean;
   width?: number;
   x?: number;
-}> = ({ y, text, at = 0, out, size = 108, accent, width = P.right - P.margin, x = P.margin }) => {
+  align?: "left" | "center";
+}> = ({ y, text, at = 0, out, size = 108, accent, width = P.right - P.margin, x = P.margin, align = "left" }) => {
   const frame = useCurrentFrame();
   const words: Array<{ w: string; key: boolean }> = [];
   text.split(/(\*[^*]+\*)/).forEach((chunk) => {
@@ -91,6 +92,7 @@ export const HeadlineIn: React.FC<{
         fontSize: size,
         lineHeight: 1.0,
         letterSpacing: "-0.04em",
+        textAlign: align,
       }}
     >
       {words.map((word, i) => {
@@ -105,7 +107,8 @@ export const HeadlineIn: React.FC<{
               verticalAlign: "top",
               paddingBottom: "0.14em",
               marginBottom: "-0.14em",
-              marginRight: "0.24em",
+              marginRight: align === "center" ? "0.12em" : "0.24em",
+              marginLeft: align === "center" ? "0.12em" : 0,
             }}
           >
             <span

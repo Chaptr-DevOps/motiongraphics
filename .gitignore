@@ -5,3 +5,6 @@ out/
 
 # Font downloads (extracted copies are committed)
 public/brand/fonts/*.zip
+
+# Reference videos (large, not ours)
+reference/
