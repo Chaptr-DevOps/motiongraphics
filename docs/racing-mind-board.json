@@ -1,0 +1,68 @@
+[
+  {
+    "sec": 0,
+    "vo": "The moment you lie down, your brain calls a meeting.",
+    "move": "First frame / cover. Tonight's calendar; a meeting drops into the Lights out slot with a bounce: 'Everything, all at once', organizer: your brain, guest dots.",
+    "at": 0
+  },
+  {
+    "sec": 0.0333,
+    "vo": "Here's how to move it. And the fix happens before bed.",
+    "move": "The meeting is picked up (lifts, tilts, shadow) and dragged up to the evening; a dashed ghost stays where it was.",
+    "at": 3.6
+  },
+  {
+    "sec": 0.0667,
+    "vo": "All day, your worries have nowhere to land.",
+    "move": "Swap: text to the bottom. The calendar dissolves into worry pills that drift and bump around, with no slot to land in.",
+    "at": 7.6
+  },
+  {
+    "sec": 0.1,
+    "vo": "Then the house goes quiet, and they all ping at once, like an inbox…",
+    "move": "On 'quiet' the light dims. On 'ping' the pills snap into an inbox, unread dots pop on, the badge counts up to 7.",
+    "at": 10.9
+  },
+  {
+    "sec": 0.1333,
+    "vo": "But in bed you can't act on any of them, so your mind keeps them looping…",
+    "move": "Swap: text to the top. The rows peel off into a loop that spins faster; 'Rent' slips out and gets pulled back in ('so nothing gets dropped').",
+    "at": 17.1
+  },
+  {
+    "sec": 0.1667,
+    "vo": "So tonight, a couple of hours before bed, take fifteen minutes.",
+    "move": "The loop slows and settles back into the calendar: the meeting is now 'Worry list · 15 min' in the evening, and Lights out says Free.",
+    "at": 23.2
+  },
+  {
+    "sec": 0.2,
+    "vo": "Draw two columns: what's on your mind, and one small next step for each.",
+    "move": "Swap: text to the bottom. The evening block opens into the page; worries write in on the left, a next step on the right, one by one.",
+    "at": 27.6
+  },
+  {
+    "sec": 0.2333,
+    "vo": "Then fold the page.",
+    "move": "The top half folds down over the bottom; its back is amber (the one amber moment).",
+    "at": 32.9
+  },
+  {
+    "sec": 0.2667,
+    "vo": "In one study, this quieted racing thoughts at bedtime.",
+    "move": "Swap: text to the top, source under it. A jagged, busy line runs left to right and settles into a slow, calm wave.",
+    "at": 34.7
+  },
+  {
+    "sec": 0.3,
+    "vo": "If a worry shows up later, tell it: you're on the list.",
+    "move": "A new worry pops up like a notification, gets a tick, and slides into the folded page.",
+    "at": 38.5
+  },
+  {
+    "sec": 0.3333,
+    "vo": "That way, nothing's waiting for you…",
+    "move": "Back to tonight's calendar with Lights out free. The next frame is frame 1, where the meeting drops in again, so it loops.",
+    "at": 42.1
+  }
+]

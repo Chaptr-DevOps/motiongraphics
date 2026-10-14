@@ -21,9 +21,43 @@ export const line = (x0: number, y0: number, x1: number, y1: number): Pt[] => sa
 export const wave = (x0: number, x1: number, y: number, amp: number, cycles: number, phase = 0): Pt[] =>
   sample((u) => [lerp(x0, x1, u), y + Math.sin(u * cycles * TAU + phase) * amp * Math.sin(Math.PI * u) ** 0.6]);
 
-/** Circle outline whose two ends meet at the bottom, so a line curls up into it. */
-export const ring = (cx: number, cy: number, r: number): Pt[] =>
-  sample((u) => [cx + Math.cos(Math.PI / 2 + u * TAU) * r, cy + Math.sin(Math.PI / 2 + u * TAU) * r]);
+/** Circle outline whose two ends meet at the bottom, so a line curls up into it. `rot` (radians) spins it. */
+export const ring = (cx: number, cy: number, r: number, rot = 0): Pt[] =>
+  sample((u) => [cx + Math.cos(Math.PI / 2 + rot + u * TAU) * r, cy + Math.sin(Math.PI / 2 + rot + u * TAU) * r]);
+
+/** Spreads N points evenly by length along a polyline, so drawn shapes can morph like the built-in ones. */
+export const resample = (path: Pt[]): Pt[] => {
+  const cum = [0];
+  for (let k = 1; k < path.length; k++) cum.push(cum[k - 1] + Math.hypot(path[k][0] - path[k - 1][0], path[k][1] - path[k - 1][1]));
+  const total = cum[cum.length - 1];
+  let seg = 1;
+  return sample((u) => {
+    const d = u * total;
+    while (seg < path.length - 1 && cum[seg] < d) seg++;
+    const t = (d - cum[seg - 1]) / Math.max(1e-6, cum[seg] - cum[seg - 1]);
+    return [lerp(path[seg - 1][0], path[seg][0], t), lerp(path[seg - 1][1], path[seg][1], t)];
+  });
+};
+
+/**
+ * Rounded card outline, drawn from the bottom centre in the same direction as `ring`, so a ring unrolls into it.
+ * With `divX` the stroke carries on up a divider at that x (a page split into two columns).
+ */
+export const card = (x0: number, x1: number, y0: number, y1: number, divX?: number, r = 40): Pt[] => {
+  const pts: Pt[] = [];
+  const arc = (cx: number, cy: number, a0: number) => {
+    for (let k = 0; k <= 10; k++) pts.push([cx + Math.cos(a0 + (k / 10) * (Math.PI / 2)) * r, cy + Math.sin(a0 + (k / 10) * (Math.PI / 2)) * r]);
+  };
+  const start: Pt = [divX ?? (x0 + x1) / 2, y1];
+  pts.push(start);
+  arc(x0 + r, y1 - r, Math.PI / 2);
+  arc(x0 + r, y0 + r, Math.PI);
+  arc(x1 - r, y0 + r, Math.PI * 1.5);
+  arc(x1 - r, y1 - r, 0);
+  pts.push(start);
+  if (divX !== undefined) pts.push([divX, y0]);
+  return resample(pts);
+};
 
 /** Rotates (and if needed reverses) a closed outline so its points line up with `ref` and the morph does not twist. */
 const alignClosed = (ref: Pt[], pts: Pt[]): Pt[] => {

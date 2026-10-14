@@ -1,0 +1,7 @@
+[
+  { "sec": 0, "at": 40.75, "vo": "Want to know what's keeping you up?", "move": "The note (with 'Car noise?' tucked in) shrinks away and the calendar comes back with Lights out free. A quiz invite drops in above it: 'Take the sleep quiz', Organizer: you." },
+  { "sec": 0.0333, "at": 42.3, "vo": "Take the two-minute sleep quiz in our bio,", "move": "Accept gets tapped (press and ring), turns to 'Accepted' with a tick. '2 minutes · link in bio' stays readable the whole time." },
+  { "sec": 0.0667, "at": 44.55, "vo": "so you'll…", "move": "The accepted invite shrinks and drops into the Evening slot, right before Lights out, like the meeting did at the start." },
+  { "sec": 0.1, "at": 45.0, "vo": "…have a plan for when…", "move": "Booked: 'Sleep quiz · 2 min' sits in Evening, Lights out stays free. The loop line comes in at the top." },
+  { "sec": 0.1333, "at": 46.3, "vo": "→ The moment you lie down, your brain calls a meeting.", "move": "Loop: the block and the line fade over the last few frames, leaving the first frame. The meeting drops into Lights out again, and the VO reads as one sentence across the loop." }
+]
