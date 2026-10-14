@@ -27,13 +27,20 @@ The first RacingMind board (abstract dots turning into lines and circles) was re
 - **No invented data.** Illustrate the direction of a finding (a busy line calming) without axes or numbers the study didn't give.
 - Still: dark look over the frosted photo, no people, no phones/beds, no clock times (use row labels like "Evening", "Lights out"), amber once.
 
-## Workflow per script
-1. Save the script to `docs/<slug>.md` and the VO to `public/audio/<slug>-vo.mp3`. Time beats from the VO's pauses: `npx remotion ffmpeg -i <vo> -af silencedetect=noise=-38dB:d=0.18 -f null -`.
-2. Reply with the visual concept (the running metaphor plus one line per beat: object, text position, on-screen text).
-3. **Storyboard before any animation** (the user asked for this): a `<Name>Board` composition with one frame per panel, built from `components/objects.tsx`, rendered with `node scripts/storyboard.mjs <Id> docs/<slug>-board.json` (each panel: `sec` frame, `at` VO time, `vo`, `move`). Look at the sheet yourself and fix overlaps, three-line supers and unreadable objects before showing it.
-4. Animate only after the board is approved, reusing the same object components. Keep VO cues in one `T` object at the top of the composition.
-5. **VO revisions:** the user often re-records. Keep earlier takes as `<slug>-vo-v1.mp3`, `-v2.mp3`, …, put the new take at `<slug>-vo.mp3`, re-time every cue in `T` from the new pauses (use `d=0.12` to catch short ones and to find where the last word ends), set the duration to just past the last word, and update `docs/<slug>.md`.
-6. Low-res preview (`--scale=0.5 --crf=28` into `out/preview/`), checked with stills first. **Full render only after the user approves the preview**: master `out/final/<Name>.mp4` and the cover `out/final/<Name>-cover.png` (a frame where the hook is fully on screen; RacingMind uses frame 90).
+## Workflow per script (agreed with the user Oct 14; one new chat per video)
+The user writes the script in a separate Claude project, records the VO in ElevenLabs, and starts a **new chat** here with both (VO as a file path, script as text). This file and memory carry everything; don't ask them to re-explain the style. **Reference implementation: `src/compositions/RacingMind.tsx`** (cue table `T`, layers per object, `EndLayer` CTA, photo background + `SurfaceTint`, supers list). Copy its structure for each new reel.
+
+Three approval gates, nothing past a gate without the user's OK:
+1. **Intake.** Pick a slug. Save the script to `docs/<slug>.md` and copy the VO to `public/audio/<slug>-vo.mp3`. Time the beats from the VO's pauses: `npx remotion ffmpeg -i <vo> -af silencedetect=noise=-38dB:d=0.18 -f null -`, using `d=0.12` to catch short pauses and find where the last word ends. Check the script against this file before designing. Flag any problems in the reply, but don't block on them:
+   - the CTA must be second-to-last and the loop line last, running into the hook
+   - the quiz must be named consistently
+   - no diagnosis language
+   - specifics the visuals will have to show (times, counts) must make sense
+2. **Gate 1, storyboard.** Reply with the running metaphor in two lines plus the storyboard sheet. Make a `<Name>Board` with one frame per beat, CTA and loop included, using `components/objects.tsx` and the video's photo and tint. Render it with `node scripts/storyboard.mjs <Id> docs/<slug>-board.json` (each panel: `sec` frame, `at` VO time, `vo`, `move`). On the same turn, add 2–3 cover options (`<Name>Covers`, following the cover rules below). Look at both sheets yourself and fix overlaps, three-line supers and unreadable objects before showing them.
+3. **Gate 2, low-res preview.** Animate, reusing the board's objects. Keep the VO cues in one `T` object. Check stills across the video (`scripts/stills.mjs`), then render `--scale=0.5 --crf=28` to `out/preview/<Name>.mp4` and open it.
+4. **Gate 3, final.** Render the master to `out/final/<Name>.mp4` and the chosen cover to `out/final/<Name>-cover.png`, in the background. Verify the size and duration, then commit and push (`git push`; the remote is GitHub `Chaptr-DevOps/motiongraphics`).
+- **VO revisions** (common): keep earlier takes as `<slug>-vo-v1.mp3`, `-v2.mp3`, …, put the new take at `<slug>-vo.mp3`, re-time every cue in `T`, set the duration to just past the last word, and update `docs/<slug>.md`. Send a whole new take, not patched lines.
+- **New metaphor objects** go into `components/objects.tsx` in the same style, so later videos can reuse them.
 
 ## Commands
 - `npm run studio` — live preview in the browser (localhost:3000)
