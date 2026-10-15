@@ -96,7 +96,7 @@ Three approval gates, nothing past a gate without the user's OK:
 - **Covers are designed separately, not grabbed from the video** (approved Oct 14, `RacingMindCovers` option A). They must read on a profile grid, where the cover shows as a small 3:4 tile cropped from the middle (y 240–1680). The pattern:
   - The hook question that names the viewer's situation (it must mention sleep) in all-white Instrument Sans 600 at about 170 px, three lines at the top.
   - One big object from the video's metaphor in the middle.
-  - The short answer at about 90 px below it.
-  - No dim two-tone words, no detailed small objects, same photo background and tint as the video.
+  - The short answer at about 90 px below it, **only if it adds something**. BedLearnedIt (user, Oct 15) dropped it: "Your bed learned it" under the bed "doesn't add anything".
+  - No dim two-tone words, no detailed small objects, same photo background and tint as the video. Amber on the turn of the question is fine: BedLearnedIt's chosen cover is "Sleepy on the couch?" in white, then "But not in bed?" in amber, about 150 px, four lines, over the bed with the head lit.
   - Check it by cropping to 3:4 (`sips -c 1440 1080`) and looking at it at thumbnail size.
   - Build options in a `<Name>Covers` composition and render the chosen one to `out/final/<Name>-cover.png`.
