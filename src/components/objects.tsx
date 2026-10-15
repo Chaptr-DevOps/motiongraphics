@@ -17,7 +17,7 @@ const INK: RGB = [243, 238, 230];
 const mix = (a: RGB, b: RGB, k: number): RGB =>
   [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * k) as RGB;
 /** `ink` lifts toward the type colour, `ground` sinks toward the night ground. */
-const useSurface = () => {
+export const useSurface = () => {
   const tint = useContext(SurfaceTint);
   return (ink: number, ground: number, alpha = 1) => {
     const [r, g, b] = mix(mix(tint, GROUND, ground), INK, ink).map(Math.round);
@@ -895,8 +895,24 @@ export const Invite: React.FC<{
   h: number;
   accepted?: boolean;
   press?: number;
+  label?: string;
+  sub?: string;
+  action?: string;
+  done?: string;
   style?: React.CSSProperties;
-}> = ({ x, y, w, h, accepted, press, style }) => {
+}> = ({
+  x,
+  y,
+  w,
+  h,
+  accepted,
+  press,
+  label = "New invite · Organizer: you",
+  sub = "Find out what's keeping you up",
+  action = "Accept",
+  done = "Accepted",
+  style,
+}) => {
   const surface = useSurface();
   return (
     <div
@@ -915,7 +931,7 @@ export const Invite: React.FC<{
         ...style,
       }}
     >
-      <div style={{ ...small }}>New invite · Organizer: you</div>
+      <div style={{ ...small }}>{label}</div>
       <div
         style={{
           fontSize: 60,
@@ -927,7 +943,7 @@ export const Invite: React.FC<{
         Take the sleep quiz
       </div>
       <div style={{ fontSize: 32, fontWeight: 500, marginTop: 10 }}>
-        Find out what's keeping you up
+        {sub}
       </div>
       <div
         style={{ fontSize: 28, fontWeight: 500, color: P.dim, marginTop: 8 }}
@@ -944,7 +960,7 @@ export const Invite: React.FC<{
         }}
       >
         <Button
-          text={accepted ? "Accepted" : "Accept"}
+          text={accepted ? done : action}
           filled
           press={press}
           done={accepted}
@@ -1006,3 +1022,557 @@ export const QuizBlock: React.FC<{
     </div>
   </div>
 );
+
+// Automations: a habit as a rule your brain set up ("When you get into bed → Wide awake"). Used by BedLearnedIt.
+
+export type GlyphKind = "pin" | "bolt" | "moon" | "up" | "check";
+
+/** Line icons for rule fields, drawn in the same thin stroke. */
+export const Glyph: React.FC<{ kind: GlyphKind; size?: number; color?: string }> = ({ kind, size = 34, color = P.ink }) => {
+  const s = { fill: "none", stroke: color, strokeWidth: 3.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" style={{ flex: "none" }}>
+      {kind === "pin" ? (
+        <>
+          <path d="M20 36 C20 36 8 25 8 16 A12 12 0 0 1 32 16 C32 25 20 36 20 36 Z" {...s} />
+          <circle cx={20} cy={16} r={4.2} {...s} />
+        </>
+      ) : kind === "bolt" ? (
+        <path d="M23 4 L9 23 H19 L17 36 L31 17 H21 Z" {...s} />
+      ) : kind === "moon" ? (
+        <path d="M27 6 A15 15 0 1 0 34 26 A12 12 0 1 1 27 6 Z" {...s} />
+      ) : kind === "check" ? (
+        <path d="M9 21 L17 29 L32 12" {...s} />
+      ) : (
+        <path d="M20 34 V8 M10 18 L20 8 L30 18" {...s} />
+      )}
+    </svg>
+  );
+};
+
+/** Round chip holding a glyph. */
+const GlyphChip: React.FC<{ kind: GlyphKind; size?: number; bright?: number }> = ({ kind, size = 66, bright = 0 }) => (
+  <div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: size / 2,
+      flex: "none",
+      boxSizing: "border-box",
+      border: `${LINE}px solid rgba(243,238,230,${0.25 + 0.5 * bright})`,
+      background: `rgba(243,238,230,${0.05 + 0.12 * bright})`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Glyph kind={kind} size={size * 0.52} />
+  </div>
+);
+
+/** Switch. `on` 0..1 slides the knob and fills the track (amber with `amber`). */
+export const Toggle: React.FC<{ on?: number; size?: number; amber?: boolean }> = ({ on = 1, size = 46, amber }) => {
+  const w = size * 1.8;
+  const pad = 6;
+  const k = size - pad * 2 - LINE * 2;
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: w,
+        height: size,
+        borderRadius: size / 2,
+        boxSizing: "border-box",
+        flex: "none",
+        border: `${LINE}px solid ${amber && on > 0.5 ? P.amber : `rgba(243,238,230,${0.35 + 0.4 * on})`}`,
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ position: "absolute", inset: 0, opacity: on, background: amber ? P.amber : P.ink }} />
+      <div
+        style={{
+          position: "absolute",
+          top: pad,
+          left: pad + (w - LINE * 2 - pad * 2 - k) * on,
+          width: k,
+          height: k,
+          borderRadius: k / 2,
+          background: on > 0.5 ? P.ground : P.ink,
+          boxShadow: "0 3px 8px rgba(0,0,0,0.35)",
+        }}
+      />
+    </div>
+  );
+};
+
+export type AutoRow = { when: string; then: string; icon?: GlyphKind; thenIcon?: GlyphKind; on?: number; fire?: number; opacity?: number };
+
+/** The list of automations, one row per rule with its switch. `fire` 0..1 lights a row as it runs. */
+export const Automations: React.FC<{
+  x: number;
+  y: number;
+  w: number;
+  rows: AutoRow[];
+  label?: string;
+  title?: string;
+  style?: React.CSSProperties;
+}> = ({ x, y, w, rows, label = "Set up by your brain", title = "Automations", style }) => (
+  <div style={{ ...card, left: x, top: y, width: w, borderRadius: 40, overflow: "hidden", ...style }}>
+    <div
+      style={{
+        height: 120,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 40px",
+        borderBottom: `2px solid ${P.hair}`,
+      }}
+    >
+      <div>
+        <div style={{ ...small }}>{label}</div>
+        <div style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.02em", marginTop: 4 }}>{title}</div>
+      </div>
+      <div style={{ ...small, fontSize: 20 }}>{rows.filter((r) => (r.on ?? 1) > 0.5).length} on</div>
+    </div>
+    {rows.map((r, i) => {
+      const fire = r.fire ?? 0;
+      return (
+        <div
+          key={r.when}
+          style={{
+            height: 150,
+            display: "flex",
+            alignItems: "center",
+            gap: 26,
+            padding: "0 40px",
+            borderTop: i ? `2px solid ${P.hair}` : undefined,
+            background: `rgba(243,238,230,${0.07 * fire})`,
+            opacity: r.opacity ?? 1,
+          }}
+        >
+          <GlyphChip kind={r.icon ?? "pin"} bright={fire} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>{r.when}</div>
+            <div
+              style={{
+                marginTop: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                fontSize: 28,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                color: fire > 0.5 ? P.ink : "rgba(243,238,230,0.6)",
+              }}
+            >
+              <Glyph kind={r.thenIcon ?? "bolt"} size={26} color={fire > 0.5 ? P.ink : "rgba(243,238,230,0.6)"} />
+              {r.then}
+            </div>
+          </div>
+          <Toggle on={r.on ?? 1} />
+        </div>
+      );
+    })}
+  </div>
+);
+
+const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ ...small, fontSize: 20, marginBottom: 12 }}>{children}</div>
+);
+
+/** One rule field ("When" / "Then"): an outlined box with a glyph chip and the condition. */
+const Field: React.FC<{
+  icon: GlyphKind;
+  text: string;
+  sub?: string;
+  struck?: boolean;
+  fire?: number;
+  amber?: boolean;
+  children?: React.ReactNode;
+}> = ({ icon, text, sub, struck, fire = 0, amber, children }) => (
+  <div
+    style={{
+      borderRadius: 26,
+      boxSizing: "border-box",
+      border: struck
+        ? `${LINE}px dashed rgba(243,238,230,0.22)`
+        : `${LINE}px solid ${amber ? P.amber : `rgba(243,238,230,${0.24 + 0.4 * fire})`}`,
+      background: amber ? "rgba(240,169,94,0.12)" : `rgba(243,238,230,${0.04 + 0.08 * fire})`,
+      boxShadow: fire ? `0 0 0 ${12 * fire}px rgba(243,238,230,${0.07 * fire})` : undefined,
+      padding: "20px 24px",
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+      <GlyphChip kind={icon} bright={fire} />
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 36,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
+            color: struck ? P.dim : amber ? P.amber : P.ink,
+            textDecoration: struck ? "line-through" : undefined,
+            textDecorationThickness: 3,
+          }}
+        >
+          {text}
+        </div>
+        {sub ? <div style={{ fontSize: 24, fontWeight: 500, color: P.dim, marginTop: 6, whiteSpace: "nowrap" }}>{sub}</div> : null}
+      </div>
+    </div>
+    {children}
+  </div>
+);
+
+/** Short dotted connector with a chevron, from When down to Then. */
+const Connector: React.FC = () => (
+  <svg width={80} height={48} style={{ display: "block", marginLeft: 33 }}>
+    <path d="M 33 4 V 40" stroke="rgba(243,238,230,0.4)" strokeWidth={LINE} strokeLinecap="round" strokeDasharray="0.1 9" />
+    <path d="M 24 32 L 33 42 L 42 32" fill="none" stroke="rgba(243,238,230,0.4)" strokeWidth={LINE} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export type LogRow = { day: string; text: string; sub?: string };
+
+/**
+ * One automation, opened: When → Then, an optional run log and link meter, and who made it.
+ * `logRows` (fractional) writes log rows in; `link` 0..1 fills the meter (direction only, no numbers).
+ * `steps` replaces the Then field with numbered actions; `stepsShown` writes them in.
+ */
+export const Rule: React.FC<{
+  x: number;
+  y: number;
+  w: number;
+  title: string;
+  label?: string;
+  on?: number;
+  when: string;
+  whenIcon?: GlyphKind;
+  whenSub?: string;
+  then: string;
+  thenIcon?: GlyphKind;
+  thenSub?: string;
+  thenStruck?: boolean;
+  thenAmber?: boolean;
+  fire?: number;
+  steps?: string[];
+  stepsShown?: number;
+  log?: LogRow[];
+  logRows?: number;
+  link?: number;
+  linkLabel?: string;
+  /** When → Then on one line, to make room for the log and meter. */
+  compact?: boolean;
+  by?: string;
+  runs?: string;
+  style?: React.CSSProperties;
+}> = ({
+  x,
+  y,
+  w,
+  title,
+  label = "Automation",
+  on = 1,
+  when,
+  whenIcon = "pin",
+  whenSub,
+  then,
+  thenIcon = "bolt",
+  thenSub,
+  thenStruck,
+  thenAmber,
+  fire,
+  steps,
+  stepsShown = steps?.length ?? 0,
+  log,
+  logRows = log?.length ?? 0,
+  link,
+  linkLabel = "Link",
+  compact,
+  by = "Created by: your brain",
+  runs = "Runs every night",
+  style,
+}) => (
+  <div style={{ ...card, left: x, top: y, width: w, borderRadius: 40, overflow: "hidden", ...style }}>
+    <div
+      style={{
+        height: 120,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 40px",
+        borderBottom: `2px solid ${P.hair}`,
+      }}
+    >
+      <div>
+        <div style={{ ...small }}>{label}</div>
+        <div style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.02em", marginTop: 4, whiteSpace: "nowrap" }}>{title}</div>
+      </div>
+      <Toggle on={on} />
+    </div>
+    <div style={{ padding: "30px 40px 34px" }}>
+      {compact ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 18,
+            padding: "20px 24px",
+            borderRadius: 26,
+            border: `${LINE}px solid rgba(243,238,230,${0.24 + 0.4 * (fire ?? 0)})`,
+            background: `rgba(243,238,230,${0.04 + 0.08 * (fire ?? 0)})`,
+            fontSize: 34,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <GlyphChip kind={whenIcon} size={58} />
+          {when}
+          <svg width={54} height={24} style={{ flex: "none" }}>
+            <path d="M 4 12 H 46 M 36 3 L 47 12 L 36 21" fill="none" stroke={P.dim} strokeWidth={LINE} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <GlyphChip kind={thenIcon} size={58} bright={fire} />
+          {then}
+        </div>
+      ) : (
+        <>
+          <FieldLabel>When</FieldLabel>
+          <Field icon={whenIcon} text={when} sub={whenSub} />
+          <Connector />
+          <FieldLabel>Then</FieldLabel>
+        </>
+      )}
+      {compact ? null : steps ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {steps.map((s, i) => (
+            <div
+              key={s}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 22,
+                height: 88,
+                padding: "0 24px",
+                borderRadius: 26,
+                boxSizing: "border-box",
+                border: `${LINE}px solid rgba(243,238,230,0.24)`,
+                background: "rgba(243,238,230,0.04)",
+                opacity: Math.min(1, Math.max(0, (stepsShown - i) * 2)),
+              }}
+            >
+              <div
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 23,
+                  flex: "none",
+                  background: P.ink,
+                  color: P.ground,
+                  fontSize: 26,
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {i + 1}
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 600, whiteSpace: "nowrap", ...writeIn(stepsShown - i) }}>{s}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Field icon={thenIcon} text={then} sub={thenSub} struck={thenStruck} amber={thenAmber} fire={fire} />
+      )}
+      {log ? (
+        <div style={{ marginTop: 30 }}>
+          <FieldLabel>Run log</FieldLabel>
+          {log.map((r, i) => (
+            <div
+              key={r.day + r.text}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                height: 64,
+                borderTop: i ? `2px solid ${P.hair}` : undefined,
+                opacity: Math.min(1, Math.max(0, (logRows - i) * 2)),
+              }}
+            >
+              <span style={{ width: 12, height: 12, borderRadius: 6, background: P.ink, flex: "none", marginRight: 18 }} />
+              <div style={{ ...small, fontSize: 20, width: 150, flex: "none" }}>{r.day}</div>
+              <div style={{ fontSize: 28, fontWeight: 500, whiteSpace: "nowrap", ...writeIn(logRows - i) }}>{r.text}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {link !== undefined ? (
+        <div style={{ marginTop: 30 }}>
+          <FieldLabel>{linkLabel}</FieldLabel>
+          <div style={{ position: "relative", height: 16, borderRadius: 8, background: "rgba(243,238,230,0.1)", overflow: "hidden" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${Math.max(0, Math.min(1, link)) * 100}%`, borderRadius: 8, background: P.ink }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 22, fontWeight: 500, color: P.dim }}>
+            <span>Weak</span>
+            <span>Strong</span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "22px 40px",
+        borderTop: `2px solid ${P.hair}`,
+        fontSize: 24,
+        fontWeight: 500,
+        color: P.dim,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span>{by}</span>
+      <span>{runs}</span>
+    </div>
+  </div>
+);
+
+/** The sleep quiz as an automation you switch on yourself. Calls back to "Created by: your brain". */
+export const QuizRule: React.FC<{ x: number; y: number; w: number; h: number; on?: number; style?: React.CSSProperties }> = ({
+  x,
+  y,
+  w,
+  h,
+  on = 0,
+  style,
+}) => {
+  const surface = useSurface();
+  return (
+    <div
+      style={{
+        ...card,
+        left: x,
+        top: y,
+        width: w,
+        height: h,
+        borderRadius: 40,
+        border: `${LINE}px solid rgba(243,238,230,0.4)`,
+        background: `linear-gradient(170deg, ${surface(0.1, 0.2, 0.97)}, ${surface(0.04, 0.4, 0.97)})`,
+        boxShadow: "0 40px 90px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
+        padding: "34px 40px",
+        ...style,
+      }}
+    >
+      <div style={{ ...small }}>New automation · Created by: you</div>
+      <div style={{ fontSize: 60, fontWeight: 600, letterSpacing: "-0.02em", marginTop: 12 }}>Take the sleep quiz</div>
+      <div style={{ fontSize: 32, fontWeight: 500, marginTop: 10 }}>Find your sleep pattern</div>
+      <div style={{ fontSize: 28, fontWeight: 500, color: P.dim, marginTop: 8 }}>2 minutes · link in bio</div>
+      <div
+        style={{
+          position: "absolute",
+          left: 40,
+          right: 40,
+          bottom: 34,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: 26,
+          borderTop: `2px solid ${P.hair}`,
+        }}
+      >
+        <div style={{ fontSize: 30, fontWeight: 600 }}>{on > 0.5 ? "On · tonight" : "Turn on"}</div>
+        <Toggle on={on} size={56} />
+      </div>
+    </div>
+  );
+};
+/** Centre of the QuizRule's switch, relative to the card's top-left. */
+export const quizToggle = (w: number, h: number) => ({ x: w - 40 - 50, y: h - 34 - 28 });
+
+/** Analog clock for spans of time ("staying in bed longer"). `minutes` sets the hands; tick it forward to show time passing. */
+export const Clock: React.FC<{ size: number; minutes: number; style?: React.CSSProperties }> = ({ size, minutes, style }) => {
+  const surface = useSurface();
+  const u = 200 / size; // viewBox units per pixel, so strokes stay ~LINE px on screen
+  const hand = (deg: number, len: number, width: number) => (
+    <line x1={100} y1={100} x2={100 + len * Math.sin((deg * Math.PI) / 180)} y2={100 - len * Math.cos((deg * Math.PI) / 180)} stroke={P.ink} strokeWidth={width} strokeLinecap="round" />
+  );
+  return (
+    <svg width={size} height={size} viewBox="0 0 200 200" style={{ overflow: "visible", ...style }}>
+      <circle cx={100} cy={100} r={94} fill={surface(0.06, 0.3, 0.92)} stroke="rgba(243,238,230,0.6)" strokeWidth={LINE * u} />
+      {Array.from({ length: 12 }, (_, i) => {
+        const a = (i * 30 * Math.PI) / 180;
+        const r0 = i % 3 === 0 ? 72 : 78;
+        return (
+          <line
+            key={i}
+            x1={100 + r0 * Math.sin(a)}
+            y1={100 - r0 * Math.cos(a)}
+            x2={100 + 85 * Math.sin(a)}
+            y2={100 - 85 * Math.cos(a)}
+            stroke={i % 3 === 0 ? "rgba(243,238,230,0.7)" : "rgba(243,238,230,0.3)"}
+            strokeWidth={(i % 3 === 0 ? LINE : 2) * u}
+            strokeLinecap="round"
+          />
+        );
+      })}
+      {hand(minutes * 0.5, 46, 7 * u)}
+      {hand(minutes * 6, 70, 4 * u)}
+      <circle cx={100} cy={100} r={7} fill={P.ink} />
+    </svg>
+  );
+};
+
+/** A week of nights, Mon–Sun. `marked` (fractional) marks nights awake one by one: the moon gives way to a bolt. */
+export const WeekNights: React.FC<{ x: number; y: number; w: number; marked: number; label?: string; title?: string; style?: React.CSSProperties }> = ({
+  x,
+  y,
+  w,
+  marked,
+  label = "This week",
+  title = "Nights",
+  style,
+}) => {
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  return (
+    <div style={{ ...card, left: x, top: y, width: w, borderRadius: 40, overflow: "hidden", ...style }}>
+      <div style={{ height: 96, display: "flex", alignItems: "center", padding: "0 36px", borderBottom: `2px solid ${P.hair}` }}>
+        <div>
+          <div style={{ ...small, fontSize: 20 }}>{label}</div>
+          <div style={{ fontSize: 36, fontWeight: 600, letterSpacing: "-0.02em", marginTop: 2 }}>{title}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 12, padding: "22px 30px 28px" }}>
+        {days.map((d, i) => {
+          const m = Math.min(1, Math.max(0, marked - i));
+          return (
+            <div key={d} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <div style={{ ...small, fontSize: 19, letterSpacing: "0.08em" }}>{d}</div>
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: 116,
+                  borderRadius: 22,
+                  boxSizing: "border-box",
+                  border: `${LINE}px solid rgba(243,238,230,${0.16 + 0.4 * m})`,
+                  background: `rgba(243,238,230,${0.03 + 0.13 * m})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ position: "absolute", opacity: 1 - m }}>
+                  <Moon size={26} color={P.dim} />
+                </div>
+                <div style={{ position: "absolute", opacity: m, transform: `scale(${0.5 + 0.5 * m})` }}>
+                  <Glyph kind="bolt" size={38} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

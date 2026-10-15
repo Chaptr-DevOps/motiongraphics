@@ -1,0 +1,14 @@
+[
+  { "sec": 0, "at": 0, "vo": "You nod off on the couch,", "move": "First frame / loop target. The stage (same size and place all video): the couch from above, your head (the dot) on the arm rest, glow soft." },
+  { "sec": 0.0333, "at": 1.6, "vo": "then the second you get into bed,", "move": "The couch morphs into the bed: frame stretches into the bed, cushions into pillows, blanket into the duvet. The head rides along to the pillow." },
+  { "sec": 0.0667, "at": 3.25, "vo": "you're wide awake.", "move": "Head on the pillow; the glow flares and starts to breathe, a little fast." },
+  { "sec": 0.1, "at": 4.7, "vo": "That's not random. Your bed learned it.", "move": "Nothing new moves; the glow gets stronger on 'learned'. A held beat." },
+  { "sec": 0.1333, "at": 7.8, "vo": "Every night you lie there trying, your brain pairs the bed with being alert,", "move": "The bedroom shrinks into the Monday square; Tue–Sun fill in as the same tiny bed, each one lighting up awake as the VO goes. The full week, all awake, by 'alert'." },
+  { "sec": 0.1667, "at": 12.2, "vo": "(transition)", "move": "Signature transition: the week collapses back into one bed, then the head's glow swells until it fills the stage." },
+  { "sec": 0.2, "at": 12.4, "vo": "like a kitchen that makes you hungry the second you walk in.", "move": "The glow shrinks back to a dot and the fridge resolves around it. On 'hungry' the door swings open and light falls out toward you." },
+  { "sec": 0.2333, "at": 15.5, "vo": "So staying in bed longer to catch up only makes the link stronger.", "move": "Glow transition back to bed. On 'longer' the right nightstand grows into a clock; its hands tick hours away. The glow keeps growing." },
+  { "sec": 0.2667, "at": 20.1, "vo": "The fix is called stimulus control.", "move": "The clock shrinks back into the nightstand. Held: head lit on the pillow." },
+  { "sec": 0.3, "at": 22.6, "vo": "When trying feels like work, get up.", "move": "On 'get up' the head leaves the pillow for the floor beside the bed, and the glow cools. The only tag in the video: 'Get up', amber." },
+  { "sec": 0.3333, "at": 25.3, "vo": "Sit somewhere dim, do something dull, and go back when your eyes feel heavy.", "move": "Glow transition to the armchair. 'Dim': the lamp comes up low. 'Dull': a book drops onto the side table. 'Go back': the glow transition carries you back to the bed, calm." },
+  { "sec": 0.3667, "at": 30.0, "vo": "Take the two-minute sleep quiz in our bio to find your pattern, for nights when—", "move": "The stage flips over (same size and place): the quiz is on the back. Start is tapped on 'find your pattern'. On 'for nights when' it flips again and lands on the couch, frame 0." }
+]

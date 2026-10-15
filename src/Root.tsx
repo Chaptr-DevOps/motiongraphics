@@ -6,6 +6,10 @@ import { RACING_MIND_SECONDS, RacingMind } from "./compositions/RacingMind";
 import { BOARD_PANELS, RacingMindBoard } from "./compositions/RacingMindBoard";
 import { END_BOARD_PANELS, RacingMindEndBoard } from "./compositions/RacingMindEndBoard";
 import { COVER_OPTIONS, RacingMindCovers } from "./compositions/RacingMindCovers";
+import { BED_LEARNED_IT_SECONDS, BedLearnedIt } from "./compositions/BedLearnedIt";
+import { BOARD_PANELS as BED_BOARD_PANELS, BedLearnedItBoard } from "./compositions/BedLearnedItBoard";
+import { COVER_OPTIONS as BED_COVER_OPTIONS, BedLearnedItCovers } from "./compositions/BedLearnedItCovers";
+import { BedLearnedItStyles, STYLE_OPTIONS as BED_STYLE_OPTIONS } from "./compositions/BedLearnedItStyles";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -20,6 +24,10 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="RacingMindBoard" component={RacingMindBoard} durationInFrames={BOARD_PANELS} {...reel} />
       <Composition id="RacingMindCovers" component={RacingMindCovers} durationInFrames={COVER_OPTIONS} {...reel} />
       <Composition id="RacingMindEndBoard" component={RacingMindEndBoard} durationInFrames={END_BOARD_PANELS} {...reel} />
+      <Composition id="BedLearnedIt" component={BedLearnedIt} durationInFrames={sec(BED_LEARNED_IT_SECONDS)} {...reel} />
+      <Composition id="BedLearnedItBoard" component={BedLearnedItBoard} durationInFrames={BED_BOARD_PANELS} {...reel} />
+      <Composition id="BedLearnedItCovers" component={BedLearnedItCovers} durationInFrames={BED_COVER_OPTIONS} {...reel} />
+      <Composition id="BedLearnedItStyles" component={BedLearnedItStyles} durationInFrames={BED_STYLE_OPTIONS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>
