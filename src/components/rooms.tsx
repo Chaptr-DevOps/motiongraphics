@@ -1,5 +1,6 @@
 // Room illustrations for scripts about places: couch, bed, a floor plan of the flat. No people, only the traces they leave
 // (a dented cushion, a slipping blanket, twisted sheets). Thin ink strokes, fills mixed from the photo tint like objects.tsx.
+import { useId } from "react";
 import { fonts } from "../brand/theme";
 import { Clock, Glyph, LINE, useSurface } from "./objects";
 import type { GlyphKind } from "./objects";
@@ -745,6 +746,360 @@ export const RoomMorph: React.FC<{
           </div>
         );
       })}
+    </div>
+  );
+};
+
+// "Picture a place" (PictureAPlace, Oct 16): your mind as a bedroom seen from above. Sheep hop over the bed, worry
+// notes slip in on top of everything, and a beach picture on the wall above the bed folds down and grows until the
+// scene fills the whole room. Same window (640 × 760), piece style and dot as RoomMorph.
+
+export type BeachFx = {
+  /** 0..1 footprints press into the sand along `STEPS`, behind you. */
+  steps?: number;
+  /** 0..1 a wave washes up the sand and slides back (0 and 1 = at rest). */
+  wave?: number;
+  /** 0..1 salt spray drifts off the water. */
+  salt?: number;
+  /** 0..1 light glints on the water (the video's one amber moment). */
+  light?: number;
+  /** A worry note drifting onto the sand (`p` 0..1), then carried off by the water (`out` 0..1). */
+  drift?: { p: number; out?: number; text: string };
+  /** Moves the wave lines along (frames or any running value). */
+  phase?: number;
+};
+
+/** Spots in window units. */
+export const DREAM = {
+  pillow: [266, 174] as [number, number],
+  sand: [300, 330] as [number, number],
+  shore: [220, 478] as [number, number],
+  /** The beach picture on the top wall above the bed, folded down over it (flat against the wall it is a thin line). */
+  card: { x: 220, y: 18, w: 200, h: 238 },
+  /** The middle of the sheep on the right of the bed, where the glow goes for "a corner of your mind". */
+  flock: [540, 360] as [number, number],
+};
+/** The footprint trail, from the top of the beach down to where you stand on the sand. */
+const STEPS: Array<[number, number]> = [
+  [150, 60],
+  [175, 110],
+  [195, 160],
+  [225, 205],
+  [250, 250],
+  [272, 292],
+];
+const WORRIES: Array<{ text: string; x: number; y: number; rot: number; from: [number, number] }> = [
+  { text: "Rent's due", x: 24, y: 236, rot: 5, from: [-240, 0] },
+  { text: "Reply to Sam", x: 70, y: 410, rot: -4, from: [-300, 0] },
+  { text: "Did I sound weird?", x: 40, y: 590, rot: -3, from: [0, 240] },
+  { text: "Is my job safe?", x: 318, y: 676, rot: 4, from: [0, 200] },
+];
+const noteW = (t: string) => Math.round(t.length * 14.2 + 46);
+
+/** A small paper note with a worry on it, in window units (top-left at 0, 0). */
+const WorryNote: React.FC<{ text: string; lit?: number }> = ({ text, lit = 0 }) => {
+  const s = useSurface();
+  const w = noteW(text);
+  return (
+    <g>
+      <rect x={4} y={10} width={w} height={58} rx={16} fill="rgba(0,0,0,0.3)" />
+      <rect x={0} y={0} width={w} height={58} rx={16} fill={s(0.2 + 0.1 * lit, 0.2)} stroke={`rgba(243,238,230,${0.55 + 0.3 * lit})`} strokeWidth={LINE} />
+      <text x={23} y={38} fontFamily={fonts.sans} fontWeight={600} fontSize={26} fill={P.ink} letterSpacing="-0.01em">
+        {text}
+      </text>
+    </g>
+  );
+};
+
+/** A sheep from above: a cloud of wool and a small dark head. `lie` 0..1 tips it over, done with it all. */
+const Sheep: React.FC<{ x: number; y: number; scale?: number; lie?: number; o?: number }> = ({ x, y, scale = 1, lie = 0, o = 1 }) => {
+  const s = useSurface();
+  const wool = s(0.62, 0.1);
+  const puffs: Array<[number, number, number]> = [
+    [-14, -10, 16],
+    [10, -12, 16],
+    [-16, 10, 15],
+    [8, 12, 16],
+    [0, 0, 18],
+  ];
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${80 * lie}) scale(${scale})`} opacity={o}>
+      <ellipse cx={3} cy={8} rx={34} ry={28} fill="rgba(0,0,0,0.28)" />
+      {puffs.map(([px, py, r], i) => (
+        <circle key={i} cx={px} cy={py} r={r} fill={wool} stroke="rgba(243,238,230,0.55)" strokeWidth={2} />
+      ))}
+      {puffs.map(([px, py, r], i) => (
+        <circle key={`f${i}`} cx={px} cy={py} r={r - 1} fill={wool} />
+      ))}
+      <ellipse cx={32} cy={0} rx={12} ry={9.5} fill={s(0.05, 0.8)} stroke="rgba(243,238,230,0.5)" strokeWidth={2} />
+    </g>
+  );
+};
+
+/** The beach, top-down, drawn into a 640 × 760 box: sand above, the sea along the bottom with a foam edge. */
+const Beach: React.FC<BeachFx & { id: string }> = ({ steps = 0, wave = 0, salt = 0, light = 0, drift, phase = 0, id }) => {
+  const s = useSurface();
+  const wash = Math.sin(Math.PI * Math.min(1, Math.max(0, wave))) * 120;
+  const edge = (dy: number) =>
+    `M 0 ${548 - dy} C 110 ${520 - dy}, 200 ${578 - dy}, 320 ${546 - dy} S 540 ${518 - dy}, 640 ${552 - dy}`;
+  const sea = `${edge(wash)} L 640 760 L 0 760 Z`;
+  return (
+    <g>
+      <defs>
+        <linearGradient id={`${id}sea`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={s(0.06, 0.45)} />
+          <stop offset="1" stopColor={s(0, 0.8)} />
+        </linearGradient>
+        <radialGradient id={`${id}sand`} cx="0.45" cy="0.35" r="0.8">
+          <stop offset="0" stopColor={s(0.34, 0.05)} />
+          <stop offset="1" stopColor={s(0.2, 0.18)} />
+        </radialGradient>
+      </defs>
+      <rect x={0} y={0} width={640} height={760} fill={`url(#${id}sand)`} />
+      {/* Soft ripples in the sand. */}
+      {[150, 250, 380].map((y, i) => (
+        <path key={i} d={`M ${60 + i * 30} ${y} q 90 -16 180 0 t 180 0`} fill="none" stroke="rgba(243,238,230,0.12)" strokeWidth={2.5} strokeLinecap="round" />
+      ))}
+      {/* Wet sand the wave leaves behind. */}
+      <path d={`${edge(wash * 1.15 + 14)} L 640 760 L 0 760 Z`} fill={s(0.05, 0.4, 0.5)} />
+      <path d={sea} fill={`url(#${id}sea)`} />
+      <path d={edge(wash)} fill="none" stroke="rgba(243,238,230,0.7)" strokeWidth={LINE} strokeLinecap="round" />
+      {/* Wave lines out on the water, rolling in. */}
+      {[0, 1, 2].map((i) => {
+        const y = 760 - ((phase * 1.1 + i * 70) % 210);
+        return (
+          <path
+            key={i}
+            d={`M ${40 + i * 50} ${y} q 70 -14 140 0 t 140 0`}
+            fill="none"
+            stroke="rgba(243,238,230,0.3)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            opacity={Math.min(1, (760 - y) / 60) * Math.min(1, (y - 560) / 40)}
+          />
+        );
+      })}
+      {/* The light on the water: glints in a path across the sea (amber, once). */}
+      {light > 0
+        ? Array.from({ length: 11 }, (_, i) => {
+            const y = 600 + i * 15;
+            const flick = 0.55 + 0.45 * Math.sin(phase * 0.25 + i * 1.9);
+            const w = 26 + ((i * 37) % 60);
+            return (
+              <rect key={i} x={430 - w / 2 + ((i * 23) % 40) - 20} y={y} width={w} height={6} rx={3} fill={P.amber} opacity={light * flick * (0.4 + i * 0.05)} />
+            );
+          })
+        : null}
+      {/* Salt spray drifting up off the water. */}
+      {salt > 0
+        ? Array.from({ length: 16 }, (_, i) => {
+            const t = ((phase * 0.6 + i * 23) % 120) / 120;
+            const x = 40 + ((i * 97) % 560) + 40 * t;
+            const y = 560 - 260 * t * salt - (i % 3) * 20;
+            return <circle key={i} cx={x} cy={y} r={3 + (i % 3)} fill={P.ink} opacity={salt * 0.55 * Math.sin(Math.PI * t)} />;
+          })
+        : null}
+      {/* Footprints, pressed in one after another behind you. */}
+      {STEPS.map(([x, y], i) => {
+        const k = Math.min(1, Math.max(0, steps * STEPS.length - i));
+        const side = i % 2 ? 12 : -12;
+        return (
+          <ellipse
+            key={i}
+            cx={x + side}
+            cy={y}
+            rx={9}
+            ry={15}
+            fill={s(0.02, 0.5, 0.75)}
+            opacity={k}
+            transform={`rotate(-30 ${x + side} ${y})`}
+          />
+        );
+      })}
+      {drift ? (
+        <g
+          transform={`translate(${640 - 300 * drift.p + 60 * (drift.out ?? 0)} ${170 + 380 * (drift.out ?? 0)}) rotate(${8 - 12 * drift.p + 20 * (drift.out ?? 0)})`}
+          opacity={Math.min(1, drift.p * 3) * (1 - (drift.out ?? 0))}
+        >
+          <WorryNote text={drift.text} lit={1} />
+        </g>
+      ) : null}
+    </g>
+  );
+};
+
+/**
+ * Your mind as a bedroom, from above. The bed sits in the middle; `pen`/`jumped`/`bored` run the sheep, who come in
+ * from the left edge, hop over the bed (rising toward you mid-air) and gather on its right; `corner` puts a glow around
+ * them; `worries` slides notes in on top of everything (they're thoughts). The beach picture hangs on the top wall:
+ * `swing` folds it down over the bed (0 is a thin line against the wall), and `card` grows it to fill the whole room (1),
+ * with the bed showing through again. `fx` animates the beach.
+ */
+export const Daydream: React.FC<{
+  w: number;
+  glow?: [number, number] | null;
+  heat?: number;
+  room?: number;
+  pen?: number;
+  /** How many sheep have hopped (fractional = mid-hop), or each sheep's own hop progress 0..1 (hops may overlap). */
+  jumped?: number | number[];
+  bored?: number;
+  corner?: number;
+  /** How many notes have slid in (fractional), or each note's own progress (springs). */
+  worries?: number | number[];
+  card?: number;
+  /** 0 hides the picture altogether. */
+  cardIn?: number;
+  swing?: number;
+  fx?: BeachFx;
+  /** Clock grown out of the room's top-right corner, for the study (`minutes` sets the hands). */
+  clock?: number;
+}> = ({ w, glow, heat = 1, room = 1, pen = 0, jumped = 0, bored = 0, corner = 0, worries = 0, card = 0, cardIn = 1, swing = 0, fx = {}, clock }) => {
+  const s = useSurface();
+  const id = `dd${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const z = w / ROOM_W;
+  const radius = Math.max(18, 40 * z);
+  // The picture: hinged on the top wall, it folds down over the bed (its height grows, and it widens a touch as it
+  // passes closest to you), then grows to fill the room.
+  const C = DREAM.card;
+  const sw = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, swing)));
+  const g = Math.min(1, Math.max(0, card));
+  const L = (a: number, b: number) => a + (b - a) * g;
+  const open = Math.max(sw, g);
+  const ph = 8 + (C.h - 8) * open;
+  const near = 1 + 0.1 * Math.sin(Math.PI * Math.min(1, Math.max(0, swing))) * (1 - g);
+  const pw0 = C.w * near;
+  const cx = L(C.x + (C.w - pw0) / 2, 0);
+  const cy = L(C.y, 0);
+  const cw = L(pw0, 640);
+  const ch = L(ph, 760);
+  const cr = L(Math.min(10, ph / 2), 40);
+  const border = L(6 * open, 0);
+  const piece = (x: number, y: number, ww: number, h: number, r: number, fill: number, line: number, rot = 0) => (
+    <rect
+      x={x}
+      y={y}
+      width={ww}
+      height={h}
+      rx={r}
+      fill={s(fill, 0.28)}
+      stroke={`rgba(243,238,230,${line})`}
+      strokeWidth={LINE}
+      transform={`rotate(${rot} ${x + ww / 2} ${y + h / 2})`}
+    />
+  );
+  // Sheep: each one runs in from the left edge, takes off at the bed, sails over it at mid-height (rising toward you, so
+  // it grows and its shadow falls away on the duvet), lands on the right and trots to its spot. None wait on the left.
+  const Y = 360;
+  const LANDED: Array<[number, number]> = [
+    [528, 318],
+    [576, 392],
+    [514, 420],
+  ];
+  // The jump over the bed uses easeInOutQuart (user, Oct 16): a slow take-off, a quick crossing, a soft landing.
+  const inOutQuart = (u: number) => (u < 0.5 ? 8 * u ** 4 : 1 - (-2 * u + 2) ** 4 / 2);
+  const outC = (u: number) => 1 - Math.pow(1 - u, 3);
+  const hop = (t: number, to: [number, number]) => {
+    if (t < 0.2) return { x: -60 + (172 + 60) * outC(t / 0.2), y: Y, up: 0 };
+    if (t < 0.85) {
+      const u = inOutQuart((t - 0.2) / 0.65);
+      return { x: 172 + (470 - 172) * u, y: Y - 10 * Math.sin(Math.PI * u), up: Math.sin(Math.PI * u) };
+    }
+    const u = outC((t - 0.85) / 0.15);
+    return { x: 470 + (to[0] - 470) * u, y: Y + (to[1] - Y) * u, up: 0 };
+  };
+  const hops = Array.isArray(jumped) ? jumped : LANDED.map((_, i) => Math.min(1, Math.max(0, jumped - i)));
+  const sheep = () =>
+    LANDED.map((to, i) => {
+      const t = Math.min(1, Math.max(0, hops[i] ?? 0));
+      if (t <= 0) return null;
+      if (t >= 1) return <Sheep key={i} x={to[0]} y={to[1]} lie={i === LANDED.length - 1 ? bored : 0} />;
+      const h = hop(t, to);
+      return (
+        <g key={i}>
+          <ellipse cx={h.x + 26 * h.up} cy={h.y + 40 * h.up} rx={36 - 6 * h.up} ry={28 - 5 * h.up} fill={`rgba(0,0,0,${0.3 - 0.12 * h.up})`} />
+          <Sheep x={h.x} y={h.y} scale={1 + 0.45 * h.up} />
+        </g>
+      );
+    });
+  const you = (o: number) =>
+    glow && o > 0.001 ? (
+      <g opacity={o}>
+        <circle cx={glow[0]} cy={glow[1]} r={100 + 70 * heat} fill={`url(#${id}glow)`} opacity={Math.min(1, 0.35 + 0.65 * heat)} />
+        <circle cx={glow[0]} cy={glow[1]} r={27} fill={P.ink} opacity={Math.min(1, 0.45 + heat)} />
+      </g>
+    ) : null;
+  const bed = (o: number) =>
+    o > 0.001 ? (
+      <g opacity={o}>
+        {piece(462, 140, 72, 72, 18, 0.05, 0.28)}
+        {piece(200, 120, 240, 460, 28, 0.06, 0.62)}
+        {piece(200, 262, 240, 318, 28, 0.14, 0.62)}
+        {piece(322, 140, 104, 72, 26, 0.2, 0.62)}
+        {piece(214, 140, 104, 72, 26, 0.2, 0.62, -7)}
+        {piece(352, 494, 96, 86, 24, 0.14, 0.62, 14)}
+      </g>
+    ) : null;
+  return (
+    <div style={{ position: "relative", width: w, height: ROOM_H * z }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: radius,
+          border: `${LINE}px solid rgba(243,238,230,0.22)`,
+          background: "linear-gradient(170deg, rgba(255,255,255,0.05), rgba(5,6,16,0.35))",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
+        }}
+      />
+      <svg width={w} height={ROOM_H * z} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} style={{ position: "relative", display: "block", overflow: "hidden", borderRadius: radius }}>
+        <defs>
+          <radialGradient id={`${id}glow`}>
+            <stop offset="0" stopColor="#F3EEE6" stopOpacity={0.45} />
+            <stop offset="1" stopColor="#F3EEE6" stopOpacity={0} />
+          </radialGradient>
+          <clipPath id={`${id}clip`}>
+            <rect x={cx} y={cy} width={cw} height={ch} rx={cr} />
+          </clipPath>
+        </defs>
+        {/* The bed and you, under the picture while it's folded down over the head of the bed. */}
+        {bed(room)}
+        {you(1 - g)}
+        {/* The beach picture: a line on the top wall, folded down over the bed, or grown to fill the room. */}
+        {cardIn > 0 ? (
+          <g opacity={cardIn}>
+            {sw > 0 && g < 0.3 ? <rect x={cx + 6 * sw * (1 - g)} y={cy + 26 * sw * (1 - g)} width={cw} height={ch} rx={cr} fill={`rgba(0,0,0,${0.35 * sw * (1 - g / 0.3)})`} /> : null}
+            <rect x={cx} y={cy} width={cw} height={ch} rx={cr} fill={s(0.75, 0.05)} />
+            <g clipPath={`url(#${id}clip)`}>
+              <g transform={`translate(${cx + border} ${cy + border}) scale(${Math.max(0.001, (cw - 2 * border) / 640)} ${(ch - 2 * border) / 760})`}>
+                <Beach {...fx} id={id} />
+              </g>
+            </g>
+            <rect x={cx} y={cy} width={cw} height={ch} rx={cr} fill="none" stroke={`rgba(243,238,230,${0.7 * (1 - g) + 0.2})`} strokeWidth={LINE} />
+          </g>
+        ) : null}
+        {/* Once the picture fills the room, the bed shows on top of the beach again. */}
+        {bed(room * g)}
+        {you(g)}
+        {/* "A corner of your mind": the glow moves off your head and onto the sheep. */}
+        {corner > 0 && pen > 0 ? <circle cx={DREAM.flock[0]} cy={DREAM.flock[1]} r={190} fill={`url(#${id}glow)`} opacity={corner * pen * (1 - g)} /> : null}
+        {pen > 0.001 ? <g opacity={pen * (1 - g)}>{sheep()}</g> : null}
+        {/* Worries slip in on top of everything: they are thoughts. The beach covers them. */}
+        {WORRIES.map((n, i) => {
+          const k = Array.isArray(worries) ? worries[i] ?? 0 : Math.min(1, Math.max(0, worries - i));
+          if (k <= 0.001) return null;
+          return (
+            <g key={n.text} transform={`translate(${n.x + n.from[0] * (1 - k)} ${n.y + n.from[1] * (1 - k)}) rotate(${n.rot * k})`} opacity={Math.min(1, Math.max(0, k * 2)) * (1 - g)}>
+              <WorryNote text={n.text} />
+            </g>
+          );
+        })}
+      </svg>
+      {clock !== undefined ? (
+        <div style={{ position: "absolute", right: -18 * z, top: -18 * z, filter: "drop-shadow(0 14px 24px rgba(0,0,0,0.5))" }}>
+          <Clock size={190 * z} minutes={clock} />
+        </div>
+      ) : null}
     </div>
   );
 };

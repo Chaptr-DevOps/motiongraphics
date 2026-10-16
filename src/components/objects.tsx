@@ -1576,3 +1576,85 @@ export const WeekNights: React.FC<{ x: number; y: number; w: number; marked: num
     </div>
   );
 };
+
+/**
+ * The back of the beach postcard (PictureAPlace's quiz CTA): stamp, message, address lines. `postmark` 0..1 thumps the
+ * "Link in bio" postmark onto the stamp. Fills its parent box (the stage).
+ */
+export const PostcardBack: React.FC<{ w: number; h: number; postmark?: number }> = ({ w, h, postmark = 0 }) => {
+  const s = useSurface();
+  const pm = Math.min(1, Math.max(0, postmark));
+  const ruled = (text: string, dim?: boolean) => (
+    <div style={{ borderBottom: `2px solid rgba(243,238,230,0.25)`, padding: "0 0 14px", marginTop: 34, fontSize: 38, fontWeight: 500, color: dim ? P.dim : P.ink }}>
+      {text}
+    </div>
+  );
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: w,
+        height: h,
+        borderRadius: 45,
+        boxSizing: "border-box",
+        border: `${LINE}px solid rgba(243,238,230,0.4)`,
+        background: `linear-gradient(170deg, ${s(0.1, 0.2, 0.97)}, ${s(0.04, 0.4, 0.97)})`,
+        boxShadow: "0 40px 90px rgba(0,0,0,0.5)",
+        fontFamily: fonts.sans,
+        color: P.ink,
+        padding: "60px 60px 0",
+      }}
+    >
+      {/* Stamp: a tiny beach behind a perforated edge. */}
+      <div style={{ position: "absolute", right: 56, top: 56, width: 132, height: 160, borderRadius: 12, border: `${LINE}px dashed rgba(243,238,230,0.55)`, padding: 9, boxSizing: "border-box" }}>
+        <svg width="100%" height="100%" viewBox="0 0 100 130" preserveAspectRatio="none" style={{ display: "block", borderRadius: 6 }}>
+          <rect width={100} height={130} fill={s(0.2, 0.15)} />
+          <path d="M 0 82 C 20 76, 40 90, 60 82 S 90 76, 100 84 L 100 130 L 0 130 Z" fill={s(0.04, 0.55)} />
+          <path d="M 0 82 C 20 76, 40 90, 60 82 S 90 76, 100 84" fill="none" stroke={P.ink} strokeWidth={2.5} />
+          <circle cx={50} cy={46} r={8} fill={P.ink} />
+        </svg>
+      </div>
+      {/* Postmark, thumped on over the stamp's corner. */}
+      {pm > 0 ? (
+        <div
+          style={{
+            position: "absolute",
+            right: 120,
+            top: 150,
+            width: 168,
+            height: 168,
+            borderRadius: 84,
+            border: `${LINE}px solid rgba(243,238,230,0.85)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            fontSize: 24,
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            lineHeight: 1.15,
+            opacity: Math.min(1, pm * 2),
+            transform: `rotate(-14deg) scale(${1.5 - 0.5 * pm})`,
+            background: "rgba(11,12,20,0.35)",
+          }}
+        >
+          Link
+          <br />
+          in bio
+        </div>
+      ) : null}
+      <div style={{ ...small, fontSize: 24 }}>Wish you were asleep</div>
+      <div style={{ fontSize: 76, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.02, marginTop: 150 }}>
+        Take the
+        <br />
+        sleep quiz
+      </div>
+      <div style={{ fontSize: 38, fontWeight: 500, marginTop: 22 }}>See what's keeping you up.</div>
+      <div style={{ marginTop: 40 }}>
+        {ruled("To: you")}
+        {ruled("Link in bio", true)}
+      </div>
+    </div>
+  );
+};

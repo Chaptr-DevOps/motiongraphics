@@ -10,6 +10,9 @@ import { BED_LEARNED_IT_SECONDS, BedLearnedIt } from "./compositions/BedLearnedI
 import { BOARD_PANELS as BED_BOARD_PANELS, BedLearnedItBoard } from "./compositions/BedLearnedItBoard";
 import { COVER_OPTIONS as BED_COVER_OPTIONS, BedLearnedItCovers } from "./compositions/BedLearnedItCovers";
 import { BedLearnedItStyles, STYLE_OPTIONS as BED_STYLE_OPTIONS } from "./compositions/BedLearnedItStyles";
+import { PICTURE_A_PLACE_SECONDS, PictureAPlace } from "./compositions/PictureAPlace";
+import { BOARD_PANELS as PAP_BOARD_PANELS, PictureAPlaceBoard } from "./compositions/PictureAPlaceBoard";
+import { COVER_OPTIONS as PAP_COVER_OPTIONS, PictureAPlaceCovers } from "./compositions/PictureAPlaceCovers";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -28,6 +31,9 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="BedLearnedItBoard" component={BedLearnedItBoard} durationInFrames={BED_BOARD_PANELS} {...reel} />
       <Composition id="BedLearnedItCovers" component={BedLearnedItCovers} durationInFrames={BED_COVER_OPTIONS} {...reel} />
       <Composition id="BedLearnedItStyles" component={BedLearnedItStyles} durationInFrames={BED_STYLE_OPTIONS} {...reel} />
+      <Composition id="PictureAPlace" component={PictureAPlace} durationInFrames={sec(PICTURE_A_PLACE_SECONDS)} {...reel} />
+      <Composition id="PictureAPlaceBoard" component={PictureAPlaceBoard} durationInFrames={PAP_BOARD_PANELS} {...reel} />
+      <Composition id="PictureAPlaceCovers" component={PictureAPlaceCovers} durationInFrames={PAP_COVER_OPTIONS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>

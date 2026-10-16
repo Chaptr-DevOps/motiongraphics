@@ -1,0 +1,20 @@
+[
+  { "sec": 0, "at": 0, "vo": "Your mind won't switch off,", "move": "First frame / loop target. The stage: a bedroom from above, you (the dot) wide awake on the pillow, glow breathing fast. A small beach postcard sits on the nightstand." },
+  { "sec": 0.0333, "at": 1.97, "vo": "and counting sheep is too boring to help.", "move": "A fence grows in the bottom-left corner; sheep hop it one at a time (they swell toward you mid-hop). The next one gives up and lies down. You're still lit." },
+  { "sec": 0.0667, "at": 5.03, "vo": "Picturing a place you love works better.", "move": "The postcard lifts off the nightstand (tilt, shadow): a beach from above, sand and a foam line." },
+  { "sec": 0.1, "at": 7.91, "vo": "Counting only fills a corner of your mind,", "move": "The postcard settles back. Only the sheep's corner stays lit; the rest of the room dims." },
+  { "sec": 0.1333, "at": 10.63, "vo": "so worries slip into the rest.", "move": "Worry notes slide in across the empty floor, one by one: Reply to Sam, Rent's due, Did I sound weird?, Is my job safe?" },
+  { "sec": 0.1667, "at": 12.89, "vo": "But a rich scene, with sounds and smells, fills the whole room.", "move": "'Rich scene': the postcard brightens. 'Fills the whole room': it grows from the nightstand until the beach covers the floor, burying the pen and the notes. The bed stays; your glow softens." },
+  { "sec": 0.2, "at": 17.83, "vo": "In an Oxford study of people with insomnia,", "move": "Swap: super to the bottom. The stage glides up and splits into two small rooms: beach-filled (Pictured a calm scene) and plain (Just distracted), each with a small clock grown from its corner. Source under the stage." },
+  { "sec": 0.2333, "at": 20.24, "vo": "those who pictured a calm scene said they fell asleep faster than people told to just distract themselves.", "move": "Both clocks tick. The left glow goes out and its clock stops; the right keeps ticking, still lit. No numbers (the direction only)." },
+  { "sec": 0.2667, "at": 26.47, "vo": "It's called imagery distraction. Here's how it works.", "move": "Super back to the top. The two rooms merge back into one bedroom, postcard on the nightstand, you on the pillow." },
+  { "sec": 0.3, "at": 29.98, "vo": "Pick a calm place you love, like a beach.", "move": "'Pick': the postcard lifts. 'Like a beach': it grows into the whole room, the bed fades away, and you glide off the pillow onto the sand." },
+  { "sec": 0.3333, "at": 33.0, "vo": "Feel the warm sand under your feet.", "move": "Footprints press into the sand behind you, one after another, as you settle." },
+  { "sec": 0.3667, "at": 35.72, "vo": "Hear the waves roll in.", "move": "A wave rolls up the sand toward you, leaves wet sand and slides back." },
+  { "sec": 0.4, "at": 37.68, "vo": "Smell the salt.", "move": "Salt spray drifts up off the water and fades." },
+  { "sec": 0.4333, "at": 39.32, "vo": "Watch the light on the water.", "move": "Glints shimmer in a path across the water: the one amber moment." },
+  { "sec": 0.4667, "at": 41.27, "vo": "If a worry drifts in, don't fight it.", "move": "A new worry note drifts onto the sand from the right: Are they mad at me? You don't move." },
+  { "sec": 0.5, "at": 43.74, "vo": "Just walk back to the waves.", "move": "You glide down to the water's edge; the next wave carries the note away." },
+  { "sec": 0.5333, "at": 45.69, "vo": "See what's keeping you up with the sleep quiz in our bio,", "move": "The stage flips over: it's the postcard's back. Wish you were asleep · Take the sleep quiz · See what's keeping you up · To: you / Link in bio. On 'in our bio' a postmark thumps onto the stamp." },
+  { "sec": 0.5667, "at": 48.74, "vo": "for nights when…", "move": "It flips back to the bedroom, you wide awake on the pillow: frame 0. The last frames fade into frame 0." }
+]
