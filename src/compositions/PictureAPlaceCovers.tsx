@@ -56,11 +56,11 @@ const options: Array<() => React.ReactNode> = [
       <Title y={1500} size={88} lines={["Picture a beach."]} amberFrom={0} />
     </>
   ),
-  // C (chosen, Oct 16): a sheep mid-hop over the bed, the beach picture swung out on the wall; the turn in amber.
+  // C (chosen, Oct 16): a sheep mid-hop over the bed, the picture flat on the wall (a thin line, not over your head); the turn in amber.
   () => (
     <>
       <Title y={290} size={150} lines={["Can't sleep?", "Skip the", "sheep."]} amberFrom={1} />
-      <Big top={830} w={600}>{(w) => <Daydream w={w} glow={DREAM.pillow} heat={1.2} pen={1} jumped={2.5} swing={1} fx={{ phase: 40 }} />}</Big>
+      <Big top={830} w={600}>{(w) => <Daydream w={w} glow={DREAM.pillow} heat={1.2} pen={1} jumped={2.5} fx={{ phase: 40 }} />}</Big>
     </>
   ),
 ];
