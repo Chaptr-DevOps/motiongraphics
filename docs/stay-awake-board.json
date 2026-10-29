@@ -1,0 +1,14 @@
+[
+  { "sec": 0, "at": 0, "vo": "Lying in bed, trying hard to fall asleep?", "move": "First frame / loop target. The bedroom from above: you (the dot) on the pillow, wide awake, glow breathing. Sleep is the moon, floating over the foot of the bed, out of reach." },
+  { "sec": 0.0333, "at": 3.22, "vo": "Try staying awake instead.", "move": "The turn. Your glow steadies; the moon drifts a little closer (a hint of the ending)." },
+  { "sec": 0.0667, "at": 5.27, "vo": "It's a real insomnia technique called paradoxical intention.", "move": "The room holds; the moon eases back over the foot of the bed. The super names it." },
+  { "sec": 0.1, "at": 9.57, "vo": "Sleep is like a forgotten name:", "move": "The moon brightens (the focal piece); the room dims around it." },
+  { "sec": 0.1333, "at": 11.85, "vo": "chase it, and it slips away.", "move": "'Chase it': you glide off the pillow after it, trailing. 'Slips away': it slides off to the far corner; a dashed ghost and dotted arrow show where it went." },
+  { "sec": 0.1667, "at": 14.13, "vo": "Trying to sleep puts your brain in effort mode,", "move": "You glide back to the pillow. The bedside lamp clicks on and light fills the room." },
+  { "sec": 0.2, "at": 16.95, "vo": "and effort keeps you alert.", "move": "A worry note drops onto the bed, over you: What if I can't sleep? Your glow stays bright." },
+  { "sec": 0.2333, "at": 18.97, "vo": "In a Glasgow study, two weeks of this made people worry less about sleep.", "move": "Swap: super to the bottom. The stage glides up; the room splits into two weeks of nights (two rows of seven tiny bedrooms). Night by night the worry shrinks and the lamp dims until both are gone. Source under the stage. No numbers." },
+  { "sec": 0.2667, "at": 23.51, "vo": "Next time, lie in the dark, eyes open,", "move": "Super back to the top. One room again: the lamp clicks off, the worry is gone; you lie in the dark, awake but calm (soft glow)." },
+  { "sec": 0.3, "at": 26.34, "vo": "and tell yourself: stay awake a little longer.", "move": "The right bedside table grows into a clock; the minute hand ticks on. The moon drifts in by itself and settles beside you, turning amber (the one amber moment); your glow fades: asleep." },
+  { "sec": 0.3333, "at": 29.83, "vo": "See what's keeping you up with the sleep quiz in our bio,", "move": "The clock shrinks back; a Note to self grows out of the same table and fills the room: Take the sleep quiz · See what's keeping you up · Link in bio. On 'in our bio' its box ticks." },
+  { "sec": 0.3667, "at": 32.67, "vo": "for nights when you're…", "move": "The note folds back into the table, the moon slips back to the foot of the bed, you're wide awake: the last frames fade into frame 0." }
+]

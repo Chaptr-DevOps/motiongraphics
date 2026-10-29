@@ -1,0 +1,5 @@
+[
+  { "sec": 0, "vo": "A", "move": "Trying hard to fall asleep? / Stay awake instead (amber), over the bed with the moon out of reach." },
+  { "sec": 0.0333, "vo": "B", "move": "Chasing sleep? / It slips away (amber), over the chase." },
+  { "sec": 0.0667, "vo": "C", "move": "Trying harder to sleep? / It keeps you awake (amber), lamp on, worry on the bed." }
+]

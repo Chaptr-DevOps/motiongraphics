@@ -1401,3 +1401,423 @@ export const ShowerRoom: React.FC<{
     </div>
   );
 };
+
+// "Try staying awake" (StayAwake, Oct 29): the bedroom from above, you (the dot) on the pillow. Sleep is the moon,
+// floating over the bed just out of reach: chase it and it slips away; stop trying and it drifts in to you on its own.
+// Trying is the bedside lamp clicking on (effort keeps the room lit); a worry note lands on the bed. The right bedside
+// table grows into a clock ("a little longer") and then into a note to self that fills the room (the quiz).
+
+/** Spots in window units. */
+export const DARK = {
+  pillow: ROOMS_MORPH.bed.glow,
+  /** Where the moon floats at the start: over the foot of the bed, out of reach. */
+  foot: [320, 548] as [number, number],
+  /** Where it slips to when you chase it: the far corner. */
+  corner: [566, 686] as [number, number],
+  /** Where it settles in the end, on the bed just below you (clear of the clock). */
+  near: [300, 340] as [number, number],
+  /** Where you stop when you chase it. */
+  chase: [306, 404] as [number, number],
+  lamp: [110, 160] as [number, number],
+  worry: { x: 196, y: 300, rot: -5 },
+};
+export const DARK_WORRY = "What if I can't sleep?";
+
+export type DarkMoon = { x: number; y: number; o?: number; amber?: number; size?: number; ghost?: [number, number]; arrow?: number };
+
+/** Sleep: a soft crescent with a halo, in window units. */
+const SleepMoon: React.FC<DarkMoon & { id: string }> = ({ x, y, o = 1, amber = 0, size = 96, id }) => {
+  const k = size / 40;
+  const a = Math.min(1, Math.max(0, amber));
+  const path = "M27 5 A16 16 0 1 0 35 27 A13 13 0 1 1 27 5 Z";
+  return (
+    <g opacity={o}>
+      <circle cx={x} cy={y} r={size * 1.3} fill={`url(#${id}glow)`} opacity={0.7 * (1 - a)} />
+      <circle cx={x} cy={y} r={size * 1.3} fill={`url(#${id}amb)`} opacity={0.7 * a} />
+      <g transform={`translate(${x - size / 2} ${y - size / 2}) scale(${k})`}>
+        <path d={path} fill={P.ink} opacity={1 - a} />
+        <path d={path} fill={P.amber} opacity={a} />
+      </g>
+    </g>
+  );
+};
+
+/** A note to self: the quiz, with a box that ticks. Drawn in a 560 × 600 box. */
+const QuizNote: React.FC<{ tick: number }> = ({ tick }) => {
+  const s = useSurface();
+  return (
+    <g>
+      <rect x={10} y={22} width={560} height={600} rx={34} fill="rgba(0,0,0,0.35)" />
+      <rect x={0} y={0} width={560} height={600} rx={34} fill={s(0.22, 0.08)} stroke="rgba(243,238,230,0.7)" strokeWidth={LINE} />
+      <text x={56} y={96} fontFamily={fonts.sans} fontWeight={500} fontSize={26} letterSpacing="0.12em" fill={P.dim}>
+        NOTE TO SELF
+      </text>
+      <rect x={56} y={160} width={58} height={58} rx={16} fill="none" stroke="rgba(243,238,230,0.75)" strokeWidth={LINE} />
+      {tick > 0 ? (
+        <path
+          d="M 70 190 L 82 204 L 102 172"
+          fill="none"
+          stroke={P.ink}
+          strokeWidth={6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray={60}
+          strokeDashoffset={60 * (1 - Math.min(1, tick))}
+        />
+      ) : null}
+      <text fontFamily={fonts.sans} fontWeight={600} fontSize={74} letterSpacing="-0.03em" fill={P.ink}>
+        <tspan x={140} y={214}>Take the</tspan>
+        <tspan x={140} y={296}>sleep quiz</tspan>
+      </text>
+      <text x={140} y={360} fontFamily={fonts.sans} fontWeight={500} fontSize={32} fill="rgba(243,238,230,0.75)">
+        See what's keeping you up
+      </text>
+      <line x1={56} y1={448} x2={504} y2={448} stroke="rgba(243,238,230,0.25)" strokeWidth={2} />
+      <text x={56} y={530} fontFamily={fonts.sans} fontWeight={600} fontSize={46} letterSpacing="-0.02em" fill={P.ink}>
+        Link in bio
+      </text>
+    </g>
+  );
+};
+
+export const DarkRoom: React.FC<{
+  w: number;
+  /** Where you are (window units); `trail` draws fading copies back toward `trailFrom` (chasing). */
+  glow?: [number, number] | null;
+  trail?: { from: [number, number]; o: number };
+  /** 0 calm … 1 wide awake and trying: the size and brightness of your glow. `pulse` breathes it (frames). */
+  awake?: number;
+  pulse?: number;
+  /** 0..1 your glow goes out: asleep. */
+  asleep?: number;
+  moon?: DarkMoon;
+  /** 0..1 the bedside lamp is on and its light fills the room. */
+  lamp?: number;
+  /** The worry note on the bed: `p` lands it (0..1), `scale` shrinks it (the study). */
+  worry?: { p: number; scale?: number };
+  /** The right bedside table grows into a clock. */
+  clock?: { p: number; minutes: number; wedge?: { from: number; to: number; o?: number } };
+  /** The right bedside table grows into the note to self (`p`), and its box ticks (`tick`). */
+  note?: { p: number; tick: number };
+  dim?: number;
+  /** Tiny copies: drop the shadow. */
+  mini?: boolean;
+}> = ({ w, glow = DARK.pillow, trail, awake = 1, pulse = 0, asleep = 0, moon, lamp = 0, worry, clock, note, dim = 1, mini }) => {
+  const s = useSurface();
+  const id = `dr${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const z = w / ROOM_W;
+  const radius = Math.max(12, 40 * z);
+  const G = glow;
+  const breathe = 1 + 0.06 * awake * Math.sin(pulse / 4.5);
+  const on = Math.min(1, Math.max(0, lamp));
+  // The note grows from the right bedside table to fill the room.
+  const np = note ? Math.min(1, Math.max(0, note.p)) : 0;
+  const nScale = 0.12 + 0.88 * np;
+  const nx = 530 + (40 - 530) * np - 280 * nScale * (1 - np);
+  const ny = 160 + (80 - 160) * np - 300 * nScale * (1 - np);
+  return (
+    <div style={{ position: "relative", width: w, height: ROOM_H * z }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: radius,
+          border: `${mini ? 2 : LINE}px solid rgba(243,238,230,0.22)`,
+          background: "linear-gradient(170deg, rgba(255,255,255,0.05), rgba(5,6,16,0.35))",
+          boxShadow: mini ? undefined : "0 30px 80px rgba(0,0,0,0.35)",
+        }}
+      />
+      <svg width={w} height={ROOM_H * z} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} style={{ position: "relative", display: "block", overflow: "hidden", borderRadius: radius }}>
+        <defs>
+          <radialGradient id={`${id}glow`}>
+            <stop offset="0" stopColor="#F3EEE6" stopOpacity={0.45} />
+            <stop offset="1" stopColor="#F3EEE6" stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id={`${id}amb`}>
+            <stop offset="0" stopColor={P.amber} stopOpacity={0.5} />
+            <stop offset="1" stopColor={P.amber} stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id={`${id}lamp`}>
+            <stop offset="0" stopColor="#FFF4DE" stopOpacity={0.5} />
+            <stop offset="0.45" stopColor="#FFF4DE" stopOpacity={0.18} />
+            <stop offset="1" stopColor="#FFF4DE" stopOpacity={0} />
+          </radialGradient>
+        </defs>
+        {/* The lamp's light, under the furniture so the pieces read against it. */}
+        <circle cx={DARK.lamp[0]} cy={DARK.lamp[1]} r={640} fill={`url(#${id}lamp)`} opacity={on} />
+        <g opacity={dim}>
+          {ROOMS_MORPH.bed.pieces.map((p, i) => (
+            <rect
+              key={i}
+              x={p.x}
+              y={p.y}
+              width={p.w}
+              height={p.h}
+              rx={Math.min(p.r, p.w / 2, p.h / 2)}
+              fill={s(p.fill + 0.08 * on, 0.28)}
+              stroke={`rgba(243,238,230,${(HERO.bed.includes(i) ? 0.62 : 0.28) + 0.15 * on})`}
+              strokeWidth={LINE}
+              transform={`rotate(${p.rot ?? 0} ${p.x + p.w / 2} ${p.y + p.h / 2})`}
+            />
+          ))}
+          {/* The bedside lamp: a round shade on the left table, bright when it's on. */}
+          <circle cx={DARK.lamp[0]} cy={DARK.lamp[1]} r={24} fill={on > 0.01 ? `rgba(255,244,222,${0.25 + 0.7 * on})` : s(0.12, 0.2)} stroke="rgba(243,238,230,0.6)" strokeWidth={LINE} />
+        </g>
+        {/* You: a soft glow and a dot; the trail when you chase. */}
+        {G && trail && trail.o > 0.01
+          ? [0.2, 0.4, 0.6, 0.8].map((t) => (
+              <circle key={t} cx={trail.from[0] + (G[0] - trail.from[0]) * t} cy={trail.from[1] + (G[1] - trail.from[1]) * t} r={27 * (0.5 + 0.4 * t)} fill={P.ink} opacity={trail.o * 0.35 * t} />
+            ))
+          : null}
+        {G ? (
+          <>
+            <circle cx={G[0]} cy={G[1]} r={(90 + 120 * awake) * breathe} fill={`url(#${id}glow)`} opacity={Math.min(1, 0.35 + 0.65 * awake) * (1 - 0.85 * asleep)} />
+            <circle cx={G[0]} cy={G[1]} r={27} fill={P.ink} opacity={1 - 0.45 * asleep} />
+          </>
+        ) : null}
+        {/* The worry: a note that lands on the bed, over you (thoughts sit on top). */}
+        {worry && worry.p > 0.01 ? (
+          <g
+            transform={`translate(${DARK.worry.x - (mini ? 90 : 0)} ${DARK.worry.y - 60 * (1 - worry.p)}) rotate(${DARK.worry.rot}) scale(${(worry.scale ?? 1) * (0.8 + 0.2 * worry.p) * (mini ? 1.5 : 1)})`}
+            opacity={Math.min(1, worry.p * 1.5)}
+          >
+            <WorryNote text={DARK_WORRY} lit={on} />
+          </g>
+        ) : null}
+        {/* Sleep, and where it was before it slipped away. */}
+        {moon?.ghost ? (
+          <g opacity={(moon.o ?? 1) * 0.6}>
+            <circle cx={moon.ghost[0]} cy={moon.ghost[1]} r={46} fill="none" stroke="rgba(243,238,230,0.45)" strokeWidth={LINE} strokeDasharray="8 10" />
+            {moon.arrow ? (
+              <path
+                d={`M ${moon.ghost[0] + 50} ${moon.ghost[1] + 30} Q ${(moon.ghost[0] + moon.x) / 2 + 40} ${(moon.ghost[1] + moon.y) / 2 - 30} ${moon.x - 50} ${moon.y - 34}`}
+                fill="none"
+                stroke="rgba(243,238,230,0.6)"
+                strokeWidth={5}
+                strokeLinecap="round"
+                strokeDasharray="0.1 16"
+                opacity={moon.arrow}
+              />
+            ) : null}
+          </g>
+        ) : null}
+        {moon ? <SleepMoon {...moon} id={id} /> : null}
+        {/* The note to self, grown out of the right bedside table. */}
+        {np > 0.001 ? (
+          <g transform={`translate(${nx} ${ny}) scale(${nScale}) rotate(${-2 * np} 280 300)`} opacity={Math.min(1, np * 4)}>
+            <QuizNote tick={note?.tick ?? 0} />
+          </g>
+        ) : null}
+      </svg>
+      {clock && clock.p > 0.001 ? (
+        <div
+          style={{
+            position: "absolute",
+            left: (530 - 26 * clock.p - (80 + 150 * clock.p) / 2) * z,
+            top: (160 + 50 * clock.p - (80 + 150 * clock.p) / 2) * z,
+            opacity: Math.min(1, clock.p * 3),
+            filter: "drop-shadow(0 18px 30px rgba(0,0,0,0.5))",
+          }}
+        >
+          <Clock size={(80 + 150 * clock.p) * z} minutes={clock.minutes} wedge={clock.wedge} />
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+// "Try staying awake", second take (StayAwake, Oct 29; the bed-and-moon version was rejected as unclear and static).
+// Sleep is your pillow. Your head (the dot) on the pillow is sleep; the pillow squeezes out from under you and slides
+// around the room like wet soap, and you follow it one step behind. Lie still on the bare bed and it slides back under
+// your head on its own. The bedside table grows into a clock, then into the note to self (the quiz).
+
+/** Where things are in the pillow room (window units). `path` is the route the pillow slides along, as waypoints. */
+export const PILLOW_ROOM = {
+  head: [226, 126] as [number, number],
+  bed: { x: 64, y: 52, w: 330, h: 470, r: 36 },
+  duvet: { x: 64, y: 216, w: 330, h: 306, r: 36 },
+  nightstand: { x: 418, y: 62, w: 100, h: 100, r: 24 },
+  chair: { x: 424, y: 528, w: 166, h: 166, r: 54 },
+  rug: { x: 84, y: 588, w: 250, h: 136, r: 68 },
+  path: [
+    [226, 126],
+    [354, 152],
+    [506, 300],
+    [380, 556],
+    [216, 652],
+    [84, 600],
+    [250, 548],
+    [420, 470],
+    [566, 404],
+    [574, 250],
+  ] as Array<[number, number]>,
+};
+
+/** A point along a route of waypoints (default: the pillow's): `u` is a float index (Catmull-Rom through them), plus its heading. */
+export const routeAt = (u: number, W: Array<[number, number]> = PILLOW_ROOM.path): { p: [number, number]; angle: number } => {
+  const n = W.length - 1;
+  const uu = Math.min(n, Math.max(0, u));
+  const i = Math.min(n - 1, Math.floor(uu));
+  const t = uu - i;
+  const P0 = W[Math.max(0, i - 1)];
+  const P1 = W[i];
+  const P2 = W[i + 1];
+  const P3 = W[Math.min(n, i + 2)];
+  const cr = (a: number, b: number, c: number, d: number) =>
+    0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
+  const dcr = (a: number, b: number, c: number, d: number) => 0.5 * (-a + c + 2 * (2 * a - 5 * b + 4 * c - d) * t + 3 * (-a + 3 * b - 3 * c + d) * t * t);
+  const dx = dcr(P0[0], P1[0], P2[0], P3[0]);
+  const dy = dcr(P0[1], P1[1], P2[1], P3[1]);
+  return { p: [cr(P0[0], P1[0], P2[0], P3[0]), cr(P0[1], P1[1], P2[1], P3[1])], angle: (Math.atan2(dy, dx) * 180) / Math.PI };
+};
+
+/** The bedside lamp sits on the nightstand. */
+const LAMP: [number, number] = [468, 112];
+
+export const PILLOW_W = 170;
+export const PILLOW_H = 92;
+
+/** The pillow, squeezed along its direction of travel (`v`, units per frame) like soap slipping out of a hand. */
+const SlipPillow: React.FC<{ p: [number, number]; v: [number, number]; rot: number; o?: number; lit?: number }> = ({ p, v, rot, o = 1, lit = 0 }) => {
+  const s = useSurface();
+  const speed = Math.hypot(v[0], v[1]);
+  const squeeze = Math.min(0.28, speed / 70);
+  const dir = (Math.atan2(v[1], v[0]) * 180) / Math.PI;
+  return (
+    <g opacity={o} transform={`translate(${p[0]} ${p[1]}) rotate(${dir}) scale(${1 + squeeze} ${1 - squeeze * 0.6}) rotate(${-dir}) rotate(${rot})`}>
+      <rect x={-PILLOW_W / 2 + 6} y={-PILLOW_H / 2 + 12} width={PILLOW_W} height={PILLOW_H} rx={34} fill="rgba(0,0,0,0.3)" />
+      <rect x={-PILLOW_W / 2} y={-PILLOW_H / 2} width={PILLOW_W} height={PILLOW_H} rx={34} fill={s(0.3 + 0.08 * lit, 0.12)} stroke={`rgba(243,238,230,${0.8 + 0.2 * lit})`} strokeWidth={LINE} />
+      {/* The seam down the middle: what makes a soft rectangle read as a pillow from above. */}
+      <path d={`M ${-PILLOW_W / 2 + 26} 0 Q 0 -6 ${PILLOW_W / 2 - 26} 0`} fill="none" stroke="rgba(243,238,230,0.35)" strokeWidth={2.5} strokeLinecap="round" />
+    </g>
+  );
+};
+
+export type PillowState = { p: [number, number]; v?: [number, number]; rot?: number };
+
+export const PillowRoom: React.FC<{
+  w: number;
+  pillow: PillowState;
+  /** Faint copies of the pillow behind it while it slips away (older first). */
+  trail?: PillowState[];
+  you: [number, number];
+  /** Where you were a few frames ago: draws a short trail while you move. */
+  youLag?: [number, number];
+  /** 0 calm … 1 wide awake (above 1 while chasing): your glow. `pulse` breathes it (frames). */
+  awake?: number;
+  pulse?: number;
+  asleep?: number;
+  /** 0..1 the room goes dark around you (lie in the dark). */
+  dark?: number;
+  /** 0..1 everything but the pillow dims (it's the focal piece). */
+  focus?: number;
+  clock?: { p: number; minutes: number; wedge?: { from: number; to: number; o?: number } };
+  note?: { p: number; tick: number };
+  /** The bedside lamp: `show` 0..1 grows it onto the nightstand, `on` 0..1 lights it and the room. */
+  lamp?: { show: number; on: number };
+  /** A tag on the bed under your head, in amber (the video's one amber moment). */
+  tag?: { text: string; o: number };
+  mini?: boolean;
+}> = ({ w, pillow, trail = [], you, youLag, awake = 1, pulse = 0, asleep = 0, dark = 0, focus = 0, clock, note, lamp, tag, mini }) => {
+  const s = useSurface();
+  const id = `pr${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const z = w / ROOM_W;
+  const radius = Math.max(12, 40 * z);
+  const R = PILLOW_ROOM;
+  const piece = (q: { x: number; y: number; w: number; h: number; r: number }, fill: number, line: number) => (
+    <rect x={q.x} y={q.y} width={q.w} height={q.h} rx={q.r} fill={s(fill, 0.28)} stroke={`rgba(243,238,230,${line})`} strokeWidth={LINE} />
+  );
+  const breathe = 1 + 0.06 * awake * Math.sin(pulse / 4.5);
+  const lag = youLag ?? you;
+  const ySpeed = Math.hypot(you[0] - lag[0], you[1] - lag[1]);
+  const yTrail = Math.min(1, Math.max(0, (ySpeed - 6) / 30));
+  // The note grows from the bedside table to fill the room.
+  const np = note ? Math.min(1, Math.max(0, note.p)) : 0;
+  const nScale = 0.12 + 0.88 * np;
+  const nx = 468 + (40 - 468) * np - 280 * nScale * (1 - np);
+  const ny = 112 + (80 - 112) * np - 300 * nScale * (1 - np);
+  return (
+    <div style={{ position: "relative", width: w, height: ROOM_H * z }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: radius,
+          border: `${mini ? 2 : LINE}px solid rgba(243,238,230,0.22)`,
+          background: "linear-gradient(170deg, rgba(255,255,255,0.05), rgba(5,6,16,0.35))",
+          boxShadow: mini ? undefined : "0 30px 80px rgba(0,0,0,0.35)",
+        }}
+      />
+      <svg width={w} height={ROOM_H * z} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} style={{ position: "relative", display: "block", overflow: "hidden", borderRadius: radius }}>
+        <defs>
+          <radialGradient id={`${id}glow`}>
+            <stop offset="0" stopColor="#F3EEE6" stopOpacity={0.45} />
+            <stop offset="1" stopColor="#F3EEE6" stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id={`${id}lamp`}>
+            <stop offset="0" stopColor="#FFF4DE" stopOpacity={0.5} />
+            <stop offset="0.45" stopColor="#FFF4DE" stopOpacity={0.16} />
+            <stop offset="1" stopColor="#FFF4DE" stopOpacity={0} />
+          </radialGradient>
+        </defs>
+        {/* The lamp's light, under the furniture so the pieces read against it. */}
+        {lamp && lamp.on > 0.01 ? <circle cx={LAMP[0]} cy={LAMP[1]} r={700} fill={`url(#${id}lamp)`} opacity={lamp.on * lamp.show} /> : null}
+        <g opacity={(1 - 0.4 * dark) * (1 - 0.45 * focus)}>
+          {piece(R.rug, 0.02, 0.18)}
+          {/* The armchair stays under the pillow and you (user, Oct 29: sliding under it looked weird). */}
+          {piece(R.chair, 0.07, 0.28)}
+          <rect x={R.chair.x + 32} y={R.chair.y + 32} width={102} height={102} rx={34} fill={s(0.12, 0.2)} stroke="rgba(243,238,230,0.28)" strokeWidth={LINE} />
+          {piece(R.nightstand, 0.05, 0.28)}
+          {piece(R.bed, 0.06, 0.62)}
+          {piece(R.duvet, 0.14, 0.62)}
+        </g>
+        {/* The bedside lamp from above: a round shade with the bulb showing through the top, bright when it's on. */}
+        {lamp && lamp.show > 0.01 ? (
+          <g transform={`translate(${LAMP[0]} ${LAMP[1]}) scale(${lamp.show})`}>
+            <circle r={36} fill="rgba(0,0,0,0.3)" transform="translate(4 8)" />
+            <circle r={36} fill={lamp.on > 0.01 ? `rgba(255,244,222,${0.2 + 0.65 * lamp.on})` : s(0.14, 0.18)} stroke="rgba(243,238,230,0.75)" strokeWidth={LINE} />
+            <circle r={13} fill={lamp.on > 0.01 ? `rgba(255,250,240,${0.4 + 0.6 * lamp.on})` : s(0.25, 0.1)} stroke="rgba(243,238,230,0.5)" strokeWidth={2} />
+          </g>
+        ) : null}
+        {trail.map((q, i) => (
+          <SlipPillow key={i} p={q.p} v={q.v ?? [0, 0]} rot={q.rot ?? 0} o={(0.3 * (i + 1)) / (trail.length + 1)} />
+        ))}
+        <SlipPillow p={pillow.p} v={pillow.v ?? [0, 0]} rot={pillow.rot ?? 0} lit={focus} />
+        {/* You: a short trail while moving, a soft glow and a dot. */}
+        {yTrail > 0.01
+          ? [0.25, 0.5, 0.75].map((t) => (
+              <circle key={t} cx={lag[0] + (you[0] - lag[0]) * t} cy={lag[1] + (you[1] - lag[1]) * t} r={27 * (0.5 + 0.4 * t)} fill={P.ink} opacity={yTrail * 0.35 * t} />
+            ))
+          : null}
+        <circle cx={you[0]} cy={you[1]} r={(90 + 120 * awake) * breathe} fill={`url(#${id}glow)`} opacity={Math.min(1, 0.35 + 0.65 * awake) * (1 - 0.85 * asleep)} />
+        <circle cx={you[0]} cy={you[1]} r={27} fill={P.ink} opacity={1 - 0.45 * asleep} />
+        {tag && tag.o > 0.01 ? (
+          <g opacity={Math.min(1, tag.o)} transform={`translate(${320} ${R.head[1] + 128 - 14 * (1 - Math.min(1, tag.o))})`}>
+            <rect x={-(tag.text.length * 18.6 + 56) / 2} y={-38} width={tag.text.length * 18.6 + 56} height={76} rx={38} fill={s(0.1, 0.4)} stroke={P.amber} strokeWidth={LINE} />
+            <text y={12} textAnchor="middle" fontFamily={fonts.sans} fontWeight={600} fontSize={35} fill={P.amber} letterSpacing="-0.01em">
+              {tag.text}
+            </text>
+          </g>
+        ) : null}
+        {np > 0.001 ? (
+          <g transform={`translate(${nx} ${ny}) scale(${nScale}) rotate(${-2 * np} 280 300)`} opacity={Math.min(1, np * 4)}>
+            <QuizNote tick={note?.tick ?? 0} />
+          </g>
+        ) : null}
+      </svg>
+      {clock && clock.p > 0.001 ? (
+        <div
+          style={{
+            position: "absolute",
+            left: (468 + 30 * clock.p - (90 + 150 * clock.p) / 2) * z,
+            top: (112 + 70 * clock.p - (90 + 150 * clock.p) / 2) * z,
+            opacity: Math.min(1, clock.p * 3),
+            filter: "drop-shadow(0 18px 30px rgba(0,0,0,0.5))",
+          }}
+        >
+          <Clock size={(90 + 150 * clock.p) * z} minutes={clock.minutes} wedge={clock.wedge} />
+        </div>
+      ) : null}
+    </div>
+  );
+};

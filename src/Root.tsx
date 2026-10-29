@@ -16,6 +16,10 @@ import { COVER_OPTIONS as PAP_COVER_OPTIONS, PictureAPlaceCovers } from "./compo
 import { WARM_SHOWER_SECONDS, WarmShower } from "./compositions/WarmShower";
 import { BOARD_PANELS as WS_BOARD_PANELS, WarmShowerBoard } from "./compositions/WarmShowerBoard";
 import { COVER_OPTIONS as WS_COVER_OPTIONS, WarmShowerCovers } from "./compositions/WarmShowerCovers";
+import { STAY_AWAKE_SECONDS, StayAwake } from "./compositions/StayAwake";
+import { StayAwakeTestA, StayAwakeTestB, StayAwakeTestC, TEST_SECONDS } from "./compositions/StayAwakeTests";
+import { BOARD_PANELS as SA_BOARD_PANELS, StayAwakeBoard } from "./compositions/StayAwakeBoard";
+import { COVER_OPTIONS as SA_COVER_OPTIONS, StayAwakeCovers } from "./compositions/StayAwakeCovers";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -40,6 +44,12 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="WarmShower" component={WarmShower} durationInFrames={sec(WARM_SHOWER_SECONDS)} {...reel} />
       <Composition id="WarmShowerBoard" component={WarmShowerBoard} durationInFrames={WS_BOARD_PANELS} {...reel} />
       <Composition id="WarmShowerCovers" component={WarmShowerCovers} durationInFrames={WS_COVER_OPTIONS} {...reel} />
+      <Composition id="StayAwake" component={StayAwake} durationInFrames={sec(STAY_AWAKE_SECONDS)} {...reel} />
+      <Composition id="StayAwakeTestA" component={StayAwakeTestA} durationInFrames={sec(TEST_SECONDS)} {...reel} />
+      <Composition id="StayAwakeTestB" component={StayAwakeTestB} durationInFrames={sec(TEST_SECONDS)} {...reel} />
+      <Composition id="StayAwakeTestC" component={StayAwakeTestC} durationInFrames={sec(TEST_SECONDS)} {...reel} />
+      <Composition id="StayAwakeBoard" component={StayAwakeBoard} durationInFrames={SA_BOARD_PANELS} {...reel} />
+      <Composition id="StayAwakeCovers" component={StayAwakeCovers} durationInFrames={SA_COVER_OPTIONS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>
