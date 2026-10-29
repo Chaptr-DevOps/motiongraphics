@@ -1491,7 +1491,16 @@ export const QuizRule: React.FC<{ x: number; y: number; w: number; h: number; on
 export const quizToggle = (w: number, h: number) => ({ x: w - 40 - 50, y: h - 34 - 28 });
 
 /** Analog clock for spans of time ("staying in bed longer"). `minutes` sets the hands; tick it forward to show time passing. */
-export const Clock: React.FC<{ size: number; minutes: number; style?: React.CSSProperties }> = ({ size, minutes, style }) => {
+// `moon` marks bedtime at the top of the dial; `wedge` shades a span of the dial (`from`/`to` in dial hours, 0–12, amber
+// once per video); `ghost` draws a dashed minute hand where it would have been (WarmShower: "ten minutes faster").
+export const Clock: React.FC<{
+  size: number;
+  minutes: number;
+  moon?: number;
+  wedge?: { from: number; to: number; amber?: boolean; o?: number };
+  ghost?: number;
+  style?: React.CSSProperties;
+}> = ({ size, minutes, moon = 0, wedge, ghost, style }) => {
   const surface = useSurface();
   const u = 200 / size; // viewBox units per pixel, so strokes stay ~LINE px on screen
   const hand = (deg: number, len: number, width: number) => (
@@ -1516,6 +1525,42 @@ export const Clock: React.FC<{ size: number; minutes: number; style?: React.CSSP
           />
         );
       })}
+      {wedge && (wedge.o ?? 1) > 0.001 && wedge.to > wedge.from ? (
+        (() => {
+          const at = (h: number, r: number) => [100 + r * Math.sin((h * 30 * Math.PI) / 180), 100 - r * Math.cos((h * 30 * Math.PI) / 180)];
+          const [x0, y0] = at(wedge.from, 86);
+          const [x1, y1] = at(wedge.to, 86);
+          const big = wedge.to - wedge.from > 6 ? 1 : 0;
+          const c = wedge.amber ? P.amber : "rgba(243,238,230,1)";
+          return (
+            <path
+              d={`M 100 100 L ${x0} ${y0} A 86 86 0 ${big} 1 ${x1} ${y1} Z`}
+              fill={c}
+              fillOpacity={wedge.amber ? 0.4 : 0.2}
+              stroke={c}
+              strokeOpacity={wedge.amber ? 0.9 : 0.5}
+              strokeWidth={2 * u}
+              strokeLinejoin="round"
+              opacity={wedge.o ?? 1}
+            />
+          );
+        })()
+      ) : null}
+      {moon > 0.001 ? (
+        <path d="M27 5 A16 16 0 1 0 35 27 A13 13 0 1 1 27 5 Z" fill={P.ink} transform="translate(86 34) scale(0.7)" opacity={moon} />
+      ) : null}
+      {ghost !== undefined ? (
+        <line
+          x1={100}
+          y1={100}
+          x2={100 + 70 * Math.sin((ghost * 6 * Math.PI) / 180)}
+          y2={100 - 70 * Math.cos((ghost * 6 * Math.PI) / 180)}
+          stroke="rgba(243,238,230,0.55)"
+          strokeWidth={3 * u}
+          strokeLinecap="round"
+          strokeDasharray={`${6 * u} ${8 * u}`}
+        />
+      ) : null}
       {hand(minutes * 0.5, 46, 7 * u)}
       {hand(minutes * 6, 70, 4 * u)}
       <circle cx={100} cy={100} r={7} fill={P.ink} />

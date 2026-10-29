@@ -1,0 +1,15 @@
+[
+  { "sec": 0, "at": 0, "vo": "If you shower right before bed,", "move": "First frame / loop target. The bathroom from above: you (the dot) under the shower, glowing hot, heat shimmering off you, water falling, steam drifting." },
+  { "sec": 0.0333, "at": 2.06, "vo": "you're about an hour too late.", "move": "A clock grows out of the round basin: bedtime (a moon) at the top, the hour before it shaded." },
+  { "sec": 0.0667, "at": 4.03, "vo": "You don't need a longer shower, just an earlier one.", "move": "The shower keeps running, same as before; the hands wind back one hour. The clock shrinks back into the basin." },
+  { "sec": 0.1, "at": 7.14, "vo": "To fall asleep, your body has to cool down.", "move": "The bathroom morphs into the bedroom piece by piece (tray → bed, mat → duvet, shower head → pillow); you glide slowly onto the pillow. On 'cool down' your glow shrinks and the shimmer stops." },
+  { "sec": 0.1333, "at": 10.28, "vo": "Warm water sends heat out to your hands and feet,", "move": "Back to the shower, water on, glowing hot. Four small radiators spring up around you and heat flows out to them along dotted paths." },
+  { "sec": 0.1667, "at": 13.26, "vo": "which work like radiators and let it go.", "move": "The radiators warm and shimmer the heat away; your glow gets smaller." },
+  { "sec": 0.2, "at": 15.86, "vo": "But that cooling takes time.", "move": "The clock grows out of the basin again; the minute hand ticks on, sweeping a shaded wedge, while the radiators keep working." },
+  { "sec": 0.2333, "at": 17.85, "vo": "Straight to bed, you're still warm.", "move": "Quick morph (~0.7 s) into the bedroom, radiators gone; you land on the pillow still glowing hot, shimmer rising." },
+  { "sec": 0.2667, "at": 20.39, "vo": "Researchers at UT Austin pooled 17 studies.", "move": "Swap: super to the bottom. The stage glides up; the room splits into seventeen tiny showers (rows of 4, 5, 4, 4). Source under the stage." },
+  { "sec": 0.3, "at": 24.16, "vo": "A warm shower one to two hours before bed", "move": "Super back to the top. The seventeen pool back into one shower. The clock grows out of the basin: one to two hours before the moon, in amber (the one amber moment)." },
+  { "sec": 0.3333, "at": 27.07, "vo": "helped people fall asleep about ten minutes faster.", "move": "Slow, soft morph into bed (~2 s); you're cool now and your glow goes out: asleep. The bedside table grows into the clock: the minute hand stops ten minutes short of a dashed ghost hand." },
+  { "sec": 0.3667, "at": 30.34, "vo": "See what's keeping you up with the sleep quiz in our bio", "move": "Back to the bathroom. The mirror swings up off the bottom wall and fills the stage, fogged; 'Take the sleep quiz · See what's keeping you up · Link in bio' gets wiped into the steam line by line, with a drip." },
+  { "sec": 0.4, "at": 33.1, "vo": "(no loop line yet)", "move": "The last frames fade back to frame 0: the shower, you glowing hot." }
+]

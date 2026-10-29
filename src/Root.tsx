@@ -13,6 +13,9 @@ import { BedLearnedItStyles, STYLE_OPTIONS as BED_STYLE_OPTIONS } from "./compos
 import { PICTURE_A_PLACE_SECONDS, PictureAPlace } from "./compositions/PictureAPlace";
 import { BOARD_PANELS as PAP_BOARD_PANELS, PictureAPlaceBoard } from "./compositions/PictureAPlaceBoard";
 import { COVER_OPTIONS as PAP_COVER_OPTIONS, PictureAPlaceCovers } from "./compositions/PictureAPlaceCovers";
+import { WARM_SHOWER_SECONDS, WarmShower } from "./compositions/WarmShower";
+import { BOARD_PANELS as WS_BOARD_PANELS, WarmShowerBoard } from "./compositions/WarmShowerBoard";
+import { COVER_OPTIONS as WS_COVER_OPTIONS, WarmShowerCovers } from "./compositions/WarmShowerCovers";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -34,6 +37,9 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="PictureAPlace" component={PictureAPlace} durationInFrames={sec(PICTURE_A_PLACE_SECONDS)} {...reel} />
       <Composition id="PictureAPlaceBoard" component={PictureAPlaceBoard} durationInFrames={PAP_BOARD_PANELS} {...reel} />
       <Composition id="PictureAPlaceCovers" component={PictureAPlaceCovers} durationInFrames={PAP_COVER_OPTIONS} {...reel} />
+      <Composition id="WarmShower" component={WarmShower} durationInFrames={sec(WARM_SHOWER_SECONDS)} {...reel} />
+      <Composition id="WarmShowerBoard" component={WarmShowerBoard} durationInFrames={WS_BOARD_PANELS} {...reel} />
+      <Composition id="WarmShowerCovers" component={WarmShowerCovers} durationInFrames={WS_COVER_OPTIONS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>

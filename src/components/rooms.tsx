@@ -1103,3 +1103,301 @@ export const Daydream: React.FC<{
     </div>
   );
 };
+
+// "Warm shower" (WarmShower, Oct 29): a bathroom from above that morphs into the bedroom (same seven-piece morph as
+// RoomMorph, piece i of the bathroom → piece i of the bed). You are the dot; heat is your glow plus a shimmer rising off
+// you. Heat flows out along dotted paths to four small radiators around you (your hands and feet: the super names them,
+// no body is drawn), which shimmer it away. A clock grows out of the basin (or the bedside table), and the mirror on the
+// bottom wall swings up and fills the room, fogged, with the quiz written in the steam.
+
+/** Spots in window units. */
+export const WARM = {
+  shower: [320, 262] as [number, number],
+  pillow: ROOMS_MORPH.bed.glow,
+  /** The four radiators around you, in the shower. */
+  radiators: [
+    [190, 176],
+    [450, 176],
+    [206, 380],
+    [434, 380],
+  ] as Array<[number, number]>,
+};
+
+const BATH: Piece[] = [
+  pc(56, 596, 256, 124, 22, 0.05), // vanity counter → nightstand
+  pc(146, 70, 348, 380, 30, 0.06), // shower tray → bed
+  pc(226, 494, 188, 104, 26, 0.14), // bath mat → duvet
+  pc(288, 84, 64, 34, 17, 0.22), // shower head → pillow
+  pc(108, 618, 148, 80, 40, 0.12), // basin → crooked pillow
+  pc(146, 462, 232, 12, 6, 0.2), // glass screen → duvet corner
+  pc(528, 404, 60, 236, 18, 0.08), // towel radiator → nightstand
+];
+const BATH_HERO = [1, 3];
+const BED_HERO = [1, 2, 3, 4, 5];
+
+export type WarmClock = {
+  p: number;
+  minutes: number;
+  /** Grows out of the basin (bathroom) or the right bedside table (bedroom). */
+  from: "basin" | "nightstand";
+  moon?: number;
+  wedge?: { from: number; to: number; amber?: boolean; o?: number };
+  ghost?: number;
+};
+
+/** A small radiator, drawn face-on so it reads at a glance: rounded body, fins, two feet. `warm` lifts it. */
+const Radiator: React.FC<{ x: number; y: number; scale?: number; warm?: number }> = ({ x, y, scale = 1, warm = 0 }) => {
+  const s = useSurface();
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <rect x={-40} y={-26} width={80} height={52} rx={14} fill={s(0.12 + 0.3 * warm, 0.2)} stroke={`rgba(243,238,230,${0.6 + 0.3 * warm})`} strokeWidth={LINE} />
+      {[-20, 0, 20].map((fx) => (
+        <line key={fx} x1={fx} y1={-14} x2={fx} y2={14} stroke={`rgba(243,238,230,${0.45 + 0.3 * warm})`} strokeWidth={LINE} strokeLinecap="round" />
+      ))}
+      <line x1={-28} y1={26} x2={-28} y2={34} stroke="rgba(243,238,230,0.5)" strokeWidth={LINE} strokeLinecap="round" />
+      <line x1={28} y1={26} x2={28} y2={34} stroke="rgba(243,238,230,0.5)" strokeWidth={LINE} strokeLinecap="round" />
+    </g>
+  );
+};
+
+/** Heat rising off something: three wavy lines drifting up and fading. */
+const Shimmer: React.FC<{ x: number; y: number; o: number; phase: number; spread?: number; len?: number }> = ({ x, y, o, phase, spread = 22, len = 46 }) =>
+  o > 0.01 ? (
+    <g opacity={o} fill="none" stroke="rgba(243,238,230,0.75)" strokeWidth={LINE} strokeLinecap="round">
+      {[-1, 0, 1].map((i) => {
+        const t = ((phase * 0.9 + (i + 1) * 13) % 40) / 40;
+        const yy = y - 18 * t;
+        return <path key={i} d={`M ${x + i * spread} ${yy} q 8 ${-len / 4} 0 ${-len / 2} t 0 ${-len / 2}`} opacity={Math.sin(Math.PI * t)} />;
+      })}
+    </g>
+  ) : null;
+
+export const ShowerRoom: React.FC<{
+  w: number;
+  /** 0 bathroom … 1 bedroom; `ks` gives each piece its own progress (springs with a stagger). */
+  bed?: number;
+  ks?: number[];
+  glow?: [number, number] | null;
+  /** 0 cool … 1 hot: the size of your glow and the shimmer off you. */
+  heat?: number;
+  /** 0..1 your glow goes out (asleep). */
+  asleep?: number;
+  spray?: number;
+  steam?: number;
+  /** Running value (frames) that moves the water, steam, shimmer and the dots along the heat paths. */
+  phase?: number;
+  /** 0..1 the radiators appear around you and heat flows out to them along dotted paths. */
+  radiators?: number;
+  flow?: number;
+  /** 0..1 the radiators shimmer the heat away. */
+  radiate?: number;
+  clock?: WarmClock;
+  /** The mirror on the bottom wall: `swing` folds it up from a line, `grow` fills the room, `write` writes the quiz in the fog. */
+  mirror?: { swing: number; grow: number; write: number };
+  /** 0..1 dims the room (the week-style grid of tiny copies). */
+  dim?: number;
+}> = ({ w, bed = 0, ks, glow, heat = 1, asleep = 0, spray = 0, steam = 0, phase = 0, radiators = 0, flow = 0, radiate = 0, clock, mirror, dim = 1 }) => {
+  const s = useSurface();
+  const id = `sr${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const z = w / ROOM_W;
+  const radius = Math.max(14, 40 * z);
+  const bath = 1 - Math.min(1, Math.max(0, bed));
+  const pieces = BATH.map((p, i) => {
+    const q = ROOMS_MORPH.bed.pieces[i];
+    const k = Math.min(1.05, Math.max(-0.05, ks?.[i] ?? bed));
+    const L = (u: number, v: number) => u + (v - u) * k;
+    const line = L(BATH_HERO.includes(i) ? 0.62 : 0.28, BED_HERO.includes(i) ? 0.62 : 0.28);
+    return { x: L(p.x, q.x), y: L(p.y, q.y), w: Math.max(0, L(p.w, q.w)), h: Math.max(0, L(p.h, q.h)), r: L(p.r, q.r), fill: L(p.fill, q.fill), rot: L(p.rot ?? 0, q.rot ?? 0), line };
+  });
+  const G = glow ?? null;
+  const hot = Math.max(0, heat) * (1 - asleep);
+  // Mirror on the bottom wall, above the vanity: a line, folded up, or grown to fill the room.
+  const M = mirror ?? { swing: 0, grow: 0, write: 0 };
+  const sw = Math.sin((Math.PI / 2) * Math.min(1, Math.max(0, M.swing)));
+  const mg = Math.min(1, Math.max(0, M.grow));
+  const ML = (a: number, b: number) => a + (b - a) * mg;
+  const mh0 = 8 + 230 * sw;
+  const mx = ML(66, 0);
+  const mw = ML(236, 640);
+  const mh = ML(mh0, 760);
+  const my = ML(752 - mh0, 0);
+  const mr = ML(Math.min(12, mh0 / 2), 40);
+  const showMirror = mirror && (M.swing > 0 || M.grow > 0 || bath > 0.5);
+  // Lines written in the fog, each wiped in left to right (a finger in the steam).
+  const lines: Array<{ y: number; size: number; text: string; weight: number }> = [
+    { y: 250, size: 86, text: "Take the", weight: 600 },
+    { y: 344, size: 86, text: "sleep quiz", weight: 600 },
+    { y: 440, size: 34, text: "See what's keeping you up", weight: 600 },
+    { y: 620, size: 46, text: "Link in bio", weight: 600 },
+  ];
+  const clockAt = clock
+    ? clock.from === "basin"
+      ? { x0: 182, y0: 658, x1: 196, y1: 592, s0: 70, s1: 260 }
+      : { x0: 530, y0: 160, x1: 512, y1: 214, s0: 80, s1: 230 }
+    : null;
+  return (
+    <div style={{ position: "relative", width: w, height: ROOM_H * z }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: radius,
+          border: `${LINE}px solid rgba(243,238,230,0.22)`,
+          background: "linear-gradient(170deg, rgba(255,255,255,0.05), rgba(5,6,16,0.35))",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
+        }}
+      />
+      <svg width={w} height={ROOM_H * z} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} style={{ position: "relative", display: "block", overflow: "hidden", borderRadius: radius }}>
+        <defs>
+          <radialGradient id={`${id}glow`}>
+            <stop offset="0" stopColor="#F3EEE6" stopOpacity={0.45} />
+            <stop offset="1" stopColor="#F3EEE6" stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id={`${id}fog`} cx="0.5" cy="0.45" r="0.75">
+            <stop offset="0" stopColor={s(0.5, 0.05)} />
+            <stop offset="1" stopColor={s(0.3, 0.15)} />
+          </radialGradient>
+          <clipPath id={`${id}mclip`}>
+            <rect x={mx} y={my} width={mw} height={mh} rx={mr} />
+          </clipPath>
+          <filter id={`${id}soft`} x="-5%" y="-20%" width="110%" height="140%">
+            <feGaussianBlur stdDeviation={1.4} />
+          </filter>
+        </defs>
+        <g opacity={dim}>
+          {pieces.map((p, i) =>
+            p.w > 1 ? (
+              <rect
+                key={i}
+                x={p.x}
+                y={p.y}
+                width={p.w}
+                height={p.h}
+                rx={Math.min(p.r, p.w / 2, p.h / 2)}
+                fill={s(p.fill, 0.28)}
+                stroke={`rgba(243,238,230,${p.line})`}
+                strokeWidth={LINE}
+                transform={`rotate(${p.rot} ${p.x + p.w / 2} ${p.y + p.h / 2})`}
+              />
+            ) : null,
+          )}
+          {/* Bathroom details: drain, rails on the towel radiator, the tap. They go as the room turns into the bedroom. */}
+          <g opacity={Math.max(0, 1 - 2.5 * (1 - bath))}>
+            <circle cx={320} cy={370} r={16} fill="none" stroke="rgba(243,238,230,0.35)" strokeWidth={2.5} />
+            <line x1={312} y1={370} x2={328} y2={370} stroke="rgba(243,238,230,0.35)" strokeWidth={2.5} strokeLinecap="round" />
+            {[440, 480, 520, 560, 600].map((y) => (
+              <line key={y} x1={540} y1={y} x2={576} y2={y} stroke="rgba(243,238,230,0.35)" strokeWidth={2.5} strokeLinecap="round" />
+            ))}
+            <circle cx={182} cy={706} r={9} fill={s(0.2, 0.2)} stroke="rgba(243,238,230,0.5)" strokeWidth={2.5} />
+          </g>
+        </g>
+        {/* Steam drifting off the shower. */}
+        {steam > 0.01
+          ? Array.from({ length: 9 }, (_, i) => {
+              const t = ((phase * 0.45 + i * 31) % 140) / 140;
+              const a = i * 2.3;
+              const x = 320 + Math.cos(a) * (50 + 180 * t);
+              const y = 250 + Math.sin(a) * (40 + 150 * t) - 60 * t;
+              return <circle key={i} cx={x} cy={y} r={50 + 70 * t} fill={`url(#${id}glow)`} opacity={steam * 0.9 * Math.sin(Math.PI * t)} />;
+            })
+          : null}
+        {/* Heat flowing out to the radiators: dotted paths with the dots moving outward. */}
+        {G && flow > 0.01
+          ? WARM.radiators.map(([rx, ry], i) => {
+              const mx2 = (G[0] + rx) / 2 + (i % 2 ? 24 : -24);
+              const my2 = (G[1] + ry) / 2 - 20;
+              return (
+                <path
+                  key={i}
+                  d={`M ${G[0]} ${G[1]} Q ${mx2} ${my2} ${rx} ${ry}`}
+                  fill="none"
+                  stroke="rgba(243,238,230,0.7)"
+                  strokeWidth={6}
+                  strokeLinecap="round"
+                  strokeDasharray="0.1 18"
+                  strokeDashoffset={-phase * 1.2}
+                  opacity={flow}
+                />
+              );
+            })
+          : null}
+        {radiators > 0.01
+          ? WARM.radiators.map(([rx, ry], i) => {
+              const k = Math.min(1, Math.max(0, radiators * 1.6 - i * 0.2));
+              return (
+                <g key={i} opacity={Math.min(1, k * 2)}>
+                  <Radiator x={rx} y={ry} scale={0.6 + 0.4 * k} warm={radiate} />
+                  <Shimmer x={rx} y={ry - 36} o={radiate} phase={phase + i * 7} spread={18} len={40} />
+                </g>
+              );
+            })
+          : null}
+        {/* You: a soft glow and a dot. Hot: a bigger glow and heat rising off you. */}
+        {G ? (
+          <>
+            <circle cx={G[0]} cy={G[1]} r={90 + 110 * hot} fill={`url(#${id}glow)`} opacity={Math.min(1, 0.25 + 0.75 * hot) * (1 - 0.8 * asleep)} />
+            <Shimmer x={G[0]} y={G[1] - 44} o={Math.max(0, hot - 0.35) * 1.4} phase={phase} />
+            <circle cx={G[0]} cy={G[1]} r={27} fill={P.ink} opacity={1 - 0.45 * asleep} />
+          </>
+        ) : null}
+        {/* The water: drops falling from the shower head onto you. */}
+        {spray > 0.01
+          ? Array.from({ length: 20 }, (_, i) => {
+              const t = ((phase * 1.6 + i * 11) % 36) / 36;
+              const dir = ((i * 7) % 20) / 10 - 1;
+              const x = 320 + dir * 120 * t;
+              const y = 124 + 230 * t;
+              return (
+                <line key={i} x1={x} y1={y} x2={x + dir * 6} y2={y + 14} stroke="rgba(243,238,230,0.7)" strokeWidth={2.5} strokeLinecap="round" opacity={spray * Math.sin(Math.PI * t)} />
+              );
+            })
+          : null}
+        {/* The mirror. */}
+        {showMirror ? (
+          <g opacity={mirror && M.swing === 0 && M.grow === 0 ? bath : 1}>
+            {sw > 0 && mg < 0.3 ? <rect x={mx - 6} y={my - 22 * sw} width={mw} height={mh} rx={mr} fill={`rgba(0,0,0,${0.3 * sw})`} /> : null}
+            <rect x={mx} y={my} width={mw} height={mh} rx={mr} fill={`url(#${id}fog)`} />
+            <g clipPath={`url(#${id}mclip)`}>
+              {/* Drops of condensation on the fog. */}
+              {Array.from({ length: 26 }, (_, i) => (
+                <circle key={i} cx={mx + ((i * 97) % 100) / 100 * mw} cy={my + ((i * 61) % 100) / 100 * mh} r={2 + (i % 3)} fill="rgba(243,238,230,0.35)" />
+              ))}
+              {mg > 0.95
+                ? lines.map((l, i) => {
+                    const k = Math.min(1, Math.max(0, M.write * lines.length - i));
+                    if (k <= 0) return null;
+                    const wl = l.text.length * l.size * 0.56;
+                    return (
+                      <g key={i}>
+                        <clipPath id={`${id}w${i}`}>
+                          <rect x={320 - wl / 2 - 20} y={l.y - l.size} width={(wl + 40) * k} height={l.size * 1.4} />
+                        </clipPath>
+                        <g clipPath={`url(#${id}w${i})`} filter={`url(#${id}soft)`}>
+                          <text x={320} y={l.y} textAnchor="middle" fontFamily={fonts.sans} fontWeight={l.weight} fontSize={l.size} letterSpacing="-0.02em" fill={s(0, 0.82)}>
+                            {l.text}
+                          </text>
+                        </g>
+                      </g>
+                    );
+                  })
+                : null}
+            </g>
+            <rect x={mx} y={my} width={mw} height={mh} rx={mr} fill="none" stroke="rgba(243,238,230,0.7)" strokeWidth={LINE} />
+          </g>
+        ) : null}
+      </svg>
+      {clock && clockAt && clock.p > 0.001 ? (
+        (() => {
+          const size = clockAt.s0 + (clockAt.s1 - clockAt.s0) * clock.p;
+          const cx = clockAt.x0 + (clockAt.x1 - clockAt.x0) * clock.p;
+          const cy = clockAt.y0 + (clockAt.y1 - clockAt.y0) * clock.p;
+          return (
+            <div style={{ position: "absolute", left: (cx - size / 2) * z, top: (cy - size / 2) * z, opacity: Math.min(1, clock.p * 3), filter: "drop-shadow(0 18px 30px rgba(0,0,0,0.5))" }}>
+              <Clock size={size * z} minutes={clock.minutes} moon={clock.moon} wedge={clock.wedge} ghost={clock.ghost} />
+            </div>
+          );
+        })()
+      ) : null}
+    </div>
+  );
+};
