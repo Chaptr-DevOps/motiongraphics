@@ -1,0 +1,14 @@
+[
+  { "sec": 0, "at": 0, "vo": "A · Checking the clock in bed…", "move": "A · Alarm clock. Your glance (dotted) goes to the clock on the nightstand; it lights up. Phone glowing beside it." },
+  { "sec": 0.0333, "at": 16.3, "vo": "A · Six hours left. Five and a half.", "move": "The clock grows out of the nightstand. The wedge from the hour hand to the alarm hand (7) is the sleep left; it shrinks as the hour hand ticks 1:00 → 1:30." },
+  { "sec": 0.0667, "at": 21.4, "vo": "A · Turn your clock to face the wall… alarm still works.", "move": "The clock turns until only its back shows; the phone flips face down and its glow goes out. Rings come off the back of the clock." },
+  { "sec": 0.1, "at": 26.9, "vo": "A · Find out if you're a Clock-Watcher…", "move": "A note on the back of the clock grows to fill the room: the quiz." },
+  { "sec": 0.1333, "at": 0, "vo": "B · Checking the clock in bed…", "move": "B · Searchlight. The clock's light falls across the pillow onto you." },
+  { "sec": 0.1667, "at": 19.0, "vo": "B · That countdown keeps your brain on.", "move": "Each glance swings the light back onto you, a bit harsher; your glow stays big." },
+  { "sec": 0.2, "at": 21.4, "vo": "B · Turn your clock to face the wall…", "move": "The clock turns; its light now pools on the wall. Phone face down. You go dark and calm." },
+  { "sec": 0.2333, "at": 26.9, "vo": "B · Find out if you're a Clock-Watcher…", "move": "The pool of light on the wall becomes the quiz note." },
+  { "sec": 0.2667, "at": 0, "vo": "C · Checking the clock in bed…", "move": "C · Sleep math. One glance, one note lands over the bed: How long have I got?" },
+  { "sec": 0.3, "at": 14.0, "vo": "C · Each glance starts a countdown. Six hours left…", "move": "Each glance adds a note: 6 hours left · 5½ hours left · If I fall asleep now… They pile up over you." },
+  { "sec": 0.3333, "at": 21.4, "vo": "C · Turn your clock to face the wall…", "move": "Clock to the wall, phone face down: no new notes; the pile drifts off the bed." },
+  { "sec": 0.3667, "at": 26.9, "vo": "C · Find out if you're a Clock-Watcher…", "move": "The last note grows into the quiz." }
+]

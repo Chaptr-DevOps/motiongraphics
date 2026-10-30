@@ -20,7 +20,7 @@ export const photos = {
   milkyWay: p("pexels-dzikilechu-9122578.jpg", "50% 50%", "Milky Way, tree corner", [12, 21, 25]),
   milkyWayPines: p("pexels-free-nature-stock-7524.jpg", "50% 50%", "Milky Way over pines", [36, 37, 58]),
   purpleSky: p("pexels-nuh-kostekli-3374593-14988034.jpg", "50% 50%", "Purple Milky Way. Saturated: mute it", [48, 36, 52]),
-  blueSky: p("pexels-alexbph-30229789.jpg", "50% 50%", "Saturated blue sky, pine. Mute it", [3, 37, 96]),
+  blueSky: p("pexels-alexbph-30229789(1).jpg", "50% 50%", "Saturated blue sky, pine. Mute it", [3, 37, 96]),
   carHorizon: p("pexels-didsss-4996846.jpg", "70% 50%", "Dusk horizon from a car, mirror at left edge", [16, 39, 51]),
 } satisfies Record<string, Photo>;
 

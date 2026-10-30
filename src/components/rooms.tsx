@@ -1443,7 +1443,7 @@ const SleepMoon: React.FC<DarkMoon & { id: string }> = ({ x, y, o = 1, amber = 0
 };
 
 /** A note to self: the quiz, with a box that ticks. Drawn in a 560 × 600 box. */
-const QuizNote: React.FC<{ tick: number }> = ({ tick }) => {
+export const QuizNote: React.FC<{ tick: number }> = ({ tick }) => {
   const s = useSurface();
   return (
     <g>
@@ -1818,6 +1818,339 @@ export const PillowRoom: React.FC<{
           <Clock size={(90 + 150 * clock.p) * z} minutes={clock.minutes} wedge={clock.wedge} />
         </div>
       ) : null}
+    </div>
+  );
+};
+
+// ─── ClockWatcher: the bedroom with the alarm clock ─────────────────────────────────────────────────────────────────
+// A digital alarm clock on the nightstand, seen from above: a rounded block with its display along the side that faces
+// your head, level with the pillow, so its red light runs straight at you (user, Oct 30). The time shows as red LED
+// digits over the clock. Every glance drops a note of sleep math into the light. Turned to the wall (a quarter turn),
+// the display faces the top wall and the light pools there instead; that light grows into the quiz.
+// The phone lies flat beside it: face up its screen glows (no UI), face down it's a dark slab with a camera ring.
+
+/** Where things are in the clock room (room units, ROOM_W × ROOM_H). */
+export const CLOCK_ROOM = {
+  head: [229, 132] as [number, number],
+  bed: { x: 64, y: 52, w: 330, h: 500, r: 36 },
+  duvet: { x: 64, y: 222, w: 330, h: 330, r: 36 },
+  pillow: { x: 134, y: 84, w: 190, h: 96, r: 36 },
+  nightstand: { x: 420, y: 40, w: 156, h: 266, r: 26 },
+  chair: { x: 430, y: 540, w: 160, h: 160, r: 54 },
+  rug: { x: 90, y: 600, w: 260, h: 120, r: 60 },
+  /** Level with your head, so the light runs straight across. */
+  clock: [500, 132] as [number, number],
+  phone: [498, 262] as [number, number],
+};
+/** The clock block at scale 1: narrow side toward the bed, display along the left long side. */
+export const CLOCK_BODY = { w: 74, h: 150 };
+
+export type ClockNote = { text: string; x: number; y: number; rot?: number; p: number; drift?: number };
+export type ClockFace = {
+  /** Minutes past midnight: the time on the display. */
+  minutes: number;
+  /** 1 = on the nightstand; bigger for the beats about the time. */
+  scale?: number;
+  at?: [number, number];
+  /** 0 display toward you … 1 a quarter turn, display to the wall. */
+  turn?: number;
+  lit?: number;
+};
+/** How the time sits on the clock: `side` reads from the bed (turned to face you), `upright` reads for the viewer. */
+export type Readout = "side" | "upright";
+
+// Seven-segment digits: segments a–g as [x, y, w, h] in a 10 × 18 cell.
+const SEG: Record<string, [number, number, number, number]> = {
+  a: [1.6, 0, 6.8, 1.8],
+  b: [8.2, 1.4, 1.8, 7],
+  c: [8.2, 9.6, 1.8, 7],
+  d: [1.6, 16.2, 6.8, 1.8],
+  e: [0, 9.6, 1.8, 7],
+  f: [0, 1.4, 1.8, 7],
+  g: [1.6, 8.1, 6.8, 1.8],
+};
+const DIGIT: Record<string, string> = {
+  "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc", "5": "afgcd", "6": "afgedc", "7": "abc", "8": "abcdefg", "9": "abcfgd",
+};
+/** LED time, e.g. "1:30", centred on 0,0; `h` is the digit height (room units). */
+export const LedTime: React.FC<{ text: string; h: number; o?: number }> = ({ text, h, o = 1 }) => {
+  const k = h / 18;
+  const cell = 13;
+  const colon = 6;
+  const width = text.split("").reduce((m, ch) => m + (ch === ":" ? colon : cell), 0) - 3;
+  let x = -width / 2;
+  return (
+    <g opacity={o} transform={`scale(${k})`}>
+      {text.split("").map((ch, i) => {
+        const x0 = x;
+        x += ch === ":" ? colon : cell;
+        if (ch === ":")
+          return (
+            <g key={i}>
+              <circle cx={x0 + 1.5} cy={-4} r={1.2} fill={P.led} />
+              <circle cx={x0 + 1.5} cy={4} r={1.2} fill={P.led} />
+            </g>
+          );
+        const on = DIGIT[ch] ?? "";
+        return (
+          <g key={i} transform={`translate(${x0} -9)`}>
+            {Object.entries(SEG).map(([name, [sx, sy, sw, sh]]) => (
+              <rect key={name} x={sx} y={sy} width={sw} height={sh} rx={0.9} fill={P.led} opacity={on.includes(name) ? 1 : 0.07} />
+            ))}
+          </g>
+        );
+      })}
+    </g>
+  );
+};
+const clockText = (minutes: number) => {
+  const m = ((Math.round(minutes) % 720) + 720) % 720;
+  const hh = Math.floor(m / 60) || 12;
+  return `${hh}:${String(m % 60).padStart(2, "0")}`;
+};
+
+export const ClockRoom: React.FC<{
+  w: number;
+  mini?: boolean;
+  awake?: number;
+  pulse?: number;
+  asleep?: number;
+  dark?: number;
+  clock: ClockFace;
+  readout?: Readout;
+  /** 0..1 a glance travelling from your head to the clock (outside 0..1: none). */
+  glance?: number;
+  /** The clock's red light, straight out of the display: onto you, or (turned) onto the wall. */
+  beam?: number;
+  /** 0 face up … 1 face down. */
+  phone?: number;
+  notes?: ClockNote[];
+  /** Mini rooms only: one small note over the bed (the study: clock-watchers worried more). */
+  miniNote?: number;
+  /** The alarm still works: rings off the back of the clock (`t` seconds, `o` opacity) and an amber tag. */
+  ring?: { t: number; o: number };
+  tag?: number;
+  quiz?: { p: number; tick: number };
+  /** Tossing and turning (user, Oct 30, for the hook): your head rolls across the pillow, the pillow shifts on the bed
+   *  and the duvet rumples. Sideways only, so the light stays level with your head. `headLag` is `head` a few frames ago
+   *  (a short glow trail while you roll). `rumple` -1..1 bends the folds in the duvet. */
+  restless?: { head: number; headLag?: number; pillow: number; pillowRot: number; rumple: number };
+}> = ({ w, mini, awake = 1, pulse = 0, asleep = 0, dark = 0, clock, readout = "side", restless, glance = -1, beam = 0, phone = 0, notes = [], miniNote = 0, ring, tag = 0, quiz }) => {
+  const s = useSurface();
+  const id = `cr${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const R = CLOCK_ROOM;
+  const z = w / ROOM_W;
+  const sw = mini ? 1.6 / z : LINE;
+  const radius = Math.max(8, 40 * z);
+  const piece = (q: { x: number; y: number; w: number; h: number; r: number }, fill: number, line: number) => (
+    <rect x={q.x} y={q.y} width={q.w} height={q.h} rx={q.r} fill={s(fill, 0.28)} stroke={`rgba(243,238,230,${line})`} strokeWidth={sw} />
+  );
+  const roll = restless ?? { head: 0, pillow: 0, pillowRot: 0, rumple: 0 };
+  const hx = R.head[0] + roll.head;
+  const hy = R.head[1];
+  const lagX = R.head[0] + (roll.headLag ?? roll.head);
+  const rollTrail = Math.min(1, Math.abs(hx - lagX) / 40);
+  const ru = roll.rumple;
+  const sc = clock.scale ?? 1;
+  const bw = CLOCK_BODY.w * sc;
+  const bh = CLOCK_BODY.h * sc;
+  const [cx, cy] = clock.at ?? R.clock;
+  const turn = Math.min(1, Math.max(0, clock.turn ?? 0));
+  const rot = 90 * turn;
+  // The light leaves the display (the clock's left side) along its normal: straight at your head, or (turned) up to
+  // the wall. Its centre line runs through the centre of your head.
+  const a = (Math.PI / 2) * turn;
+  const nx = -Math.cos(a);
+  const ny = -Math.sin(a);
+  const ox = cx + nx * (bw / 2);
+  const oy = cy + ny * (bw / 2);
+  const reach = (1 - turn) * (ox - hx) + turn * (oy + 40);
+  const ex = ox + nx * reach;
+  const ey = oy + ny * reach;
+  const near = bh * 0.36;
+  const far = 150;
+  const px = -ny;
+  const py = nx;
+  const cone = `M ${ox + px * near} ${oy + py * near} L ${ex + px * far} ${ey + py * far} L ${ex - px * far} ${ey - py * far} L ${ox - px * near} ${oy - py * near} Z`;
+  const breathe = 1 + 0.06 * awake * Math.sin(pulse / 4.5);
+  // The glance: a dotted arc from your head to the clock, with a spark running along it.
+  const g = glance;
+  const gOn = g > 0 && g < 1 ? Math.sin(Math.PI * g) : 0;
+  const g0: [number, number] = [hx + 40, hy - 14];
+  const g1: [number, number] = [cx - bw / 2 - 8, cy - 14];
+  const gm: [number, number] = [(g0[0] + g1[0]) / 2, Math.min(g0[1], g1[1]) - 70];
+  const qb = (k: number) => [
+    (1 - k) ** 2 * g0[0] + 2 * (1 - k) * k * gm[0] + k * k * g1[0],
+    (1 - k) ** 2 * g0[1] + 2 * (1 - k) * k * gm[1] + k * k * g1[1],
+  ];
+  const [sx, sy] = qb(Math.min(1, Math.max(0, g * 1.15)));
+  // The quiz note grows out of the light on the wall to fill the room.
+  const np = quiz ? Math.min(1, Math.max(0, quiz.p)) : 0;
+  const nScale = 0.1 + 0.9 * np;
+  const qx = cx - 280 * nScale + (40 - (cx - 280)) * np;
+  const qy = -10 + 90 * np;
+  const ph = Math.min(1, Math.max(0, phone));
+  const phoneFlip = Math.abs(Math.cos(Math.PI * ph));
+  const faceDown = ph > 0.5;
+  const lit = clock.lit ?? 0;
+  const digits = 40 * sc;
+  const showTime = Math.max(0, 1 - turn * 2.5);
+  return (
+    <div style={{ position: "relative", width: w, height: ROOM_H * z }}>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: radius,
+          border: `${mini ? 1.6 : LINE}px solid rgba(243,238,230,0.22)`,
+          background: "linear-gradient(170deg, rgba(255,255,255,0.05), rgba(5,6,16,0.35))",
+          boxShadow: mini ? undefined : "0 30px 80px rgba(0,0,0,0.35)",
+        }}
+      />
+      <svg width={w} height={ROOM_H * z} viewBox={`0 0 ${ROOM_W} ${ROOM_H}`} style={{ position: "relative", display: "block", overflow: "hidden", borderRadius: radius }}>
+        <defs>
+          <radialGradient id={`${id}glow`}>
+            <stop offset="0" stopColor="#F3EEE6" stopOpacity={0.45} />
+            <stop offset="1" stopColor="#F3EEE6" stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id={`${id}screen`}>
+            <stop offset="0" stopColor="#DCE6FF" stopOpacity={0.35} />
+            <stop offset="1" stopColor="#DCE6FF" stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id={`${id}pool`}>
+            <stop offset="0" stopColor={P.led} stopOpacity={0.34} />
+            <stop offset="1" stopColor={P.led} stopOpacity={0} />
+          </radialGradient>
+          <linearGradient id={`${id}beam`} gradientUnits="userSpaceOnUse" x1={ox} y1={oy} x2={ex} y2={ey}>
+            <stop offset="0" stopColor={P.led} stopOpacity={0.55} />
+            <stop offset="1" stopColor={P.led} stopOpacity={0.12} />
+          </linearGradient>
+        </defs>
+        <g opacity={1 - 0.45 * dark}>
+          {mini ? null : (
+            <>
+              {piece(R.rug, 0.02, 0.18)}
+              {piece(R.chair, 0.07, 0.28)}
+              <rect x={R.chair.x + 30} y={R.chair.y + 30} width={100} height={100} rx={34} fill={s(0.12, 0.2)} stroke="rgba(243,238,230,0.28)" strokeWidth={sw} />
+            </>
+          )}
+          {piece(R.nightstand, 0.05, 0.3)}
+          {piece(R.bed, 0.06, 0.62)}
+          <g transform={`translate(${10 * ru} 0) rotate(${1.5 * ru} ${R.duvet.x + R.duvet.w / 2} ${R.duvet.y})`}>{piece(R.duvet, 0.14, 0.62)}</g>
+          {/* Folds in the duvet: they bend toward the side you just rolled to. */}
+          {mini ? null : (
+            <g fill="none" stroke="rgba(243,238,230,0.32)" strokeWidth={2.5} strokeLinecap="round" opacity={0.55 + 0.45 * Math.abs(ru)}>
+              <path d={`M ${112 + 10 * ru} 262 Q ${168 + 46 * ru} ${336} ${140 + 18 * ru} 436`} />
+              <path d={`M ${234 + 10 * ru} 252 Q ${252 + 62 * ru} ${364} ${222 + 24 * ru} 506`} />
+              <path d={`M ${330 + 10 * ru} 286 Q ${306 + 52 * ru} ${384} ${344 + 16 * ru} 470`} />
+            </g>
+          )}
+          <g transform={`translate(${roll.pillow} 0) rotate(${roll.pillowRot} ${R.pillow.x + R.pillow.w / 2} ${R.pillow.y + R.pillow.h / 2})`}>
+            <rect x={R.pillow.x} y={R.pillow.y} width={R.pillow.w} height={R.pillow.h} rx={R.pillow.r} fill={s(0.3, 0.12)} stroke="rgba(243,238,230,0.8)" strokeWidth={sw} />
+            {mini ? null : (
+              <path d={`M ${R.pillow.x + 28} ${R.pillow.y + 48} Q ${hx - roll.pillow} ${R.pillow.y + 42} ${R.pillow.x + R.pillow.w - 28} ${R.pillow.y + 48}`} fill="none" stroke="rgba(243,238,230,0.35)" strokeWidth={2.5} strokeLinecap="round" />
+            )}
+          </g>
+        </g>
+        {mini ? null : (
+          <g transform={`translate(${R.phone[0]} ${R.phone[1]})`}>
+            <circle r={130} fill={`url(#${id}screen)`} opacity={1 - ph} />
+            <g transform={`scale(1 ${phoneFlip})`}>
+              <rect x={-50} y={-26} width={100} height={52} rx={12} fill="rgba(0,0,0,0.3)" transform="translate(3 6)" />
+              <rect x={-50} y={-26} width={100} height={52} rx={12} fill={faceDown ? s(0.02, 0.4) : "rgba(214,226,255,0.55)"} stroke="rgba(243,238,230,0.6)" strokeWidth={LINE} />
+              {faceDown ? <circle cx={-32} cy={-10} r={6} fill="none" stroke="rgba(243,238,230,0.45)" strokeWidth={2} /> : null}
+            </g>
+          </g>
+        )}
+        {beam > 0.005 ? (
+          <g opacity={Math.min(1, beam)}>
+            <path d={cone} fill={`url(#${id}beam)`} />
+            <circle cx={hx} cy={hy} r={190} fill={`url(#${id}pool)`} opacity={1 - turn} />
+            <ellipse cx={ex} cy={0} rx={150} ry={42} fill={P.led} opacity={0.32 * turn} />
+          </g>
+        ) : null}
+        {gOn > 0.01 ? (
+          <>
+            <path d={`M ${g0[0]} ${g0[1]} Q ${gm[0]} ${gm[1]} ${g1[0]} ${g1[1]}`} fill="none" stroke="rgba(243,238,230,0.6)" strokeWidth={3} strokeDasharray="2 12" strokeLinecap="round" opacity={gOn} />
+            <circle cx={sx} cy={sy} r={8} fill={P.ink} opacity={gOn} />
+          </>
+        ) : null}
+        {/* You: a soft glow and a dot on the pillow (only the glow trails while you roll; the dot stays round). */}
+        {rollTrail > 0.05
+          ? [0.3, 0.6].map((k) => <circle key={k} cx={lagX + (hx - lagX) * k} cy={hy} r={(90 + 120 * awake) * 0.7} fill={`url(#${id}glow)`} opacity={0.4 * rollTrail * k} />)
+          : null}
+        <circle cx={hx} cy={hy} r={(90 + 120 * awake) * breathe} fill={`url(#${id}glow)`} opacity={Math.min(1, 0.35 + 0.65 * awake) * (1 - 0.9 * asleep)} />
+        <circle cx={hx} cy={hy} r={27} fill={P.ink} opacity={1 - 0.5 * asleep} />
+        {ring && ring.o > 0.01
+          ? [0, 1, 2].map((i) => {
+              const k = (ring.t * 0.9 + i / 3) % 1;
+              return <circle key={i} cx={cx} cy={cy} r={bh / 2 + 6 + 70 * k} fill="none" stroke="rgba(243,238,230,0.7)" strokeWidth={LINE} opacity={ring.o * (1 - k)} />;
+            })
+          : null}
+        {/* The clock block from above: a snooze bar on top, the display a red strip along the side toward you. */}
+        <g transform={`translate(${cx} ${cy}) rotate(${rot})`}>
+          {lit > 0.01 ? <ellipse cx={-bw / 2} rx={bw * 0.9} ry={bh * 0.7} fill={`url(#${id}pool)`} opacity={lit} /> : null}
+          <rect x={-bw / 2 + 5 * sc} y={-bh / 2 + 10 * sc} width={bw} height={bh} rx={18 * sc} fill="rgba(0,0,0,0.35)" />
+          <rect x={-bw / 2} y={-bh / 2} width={bw} height={bh} rx={18 * sc} fill={s(0.1, 0.32)} stroke="rgba(243,238,230,0.7)" strokeWidth={sw} />
+          {mini ? null : (
+            <rect x={-bw * 0.08} y={-bh * 0.32} width={bw * 0.3} height={bh * 0.64} rx={bw * 0.15} fill={s(0.18, 0.2)} stroke="rgba(243,238,230,0.4)" strokeWidth={2} />
+          )}
+          <rect x={-bw / 2 - 2 * sc} y={-bh * 0.38} width={7 * sc} height={bh * 0.76} rx={3.5 * sc} fill={P.led} opacity={0.35 + 0.65 * Math.min(1, lit + beam)} />
+        </g>
+        {/* The time, in red LED digits over the clock: turned to read from the bed, or upright for the viewer. */}
+        {!mini && showTime > 0.01 ? (
+          readout === "side" ? (
+            <g transform={`translate(${cx} ${cy}) rotate(90)`} opacity={showTime}>
+              <rect x={-bh * 0.46} y={-digits * 0.85} width={bh * 0.92} height={digits * 1.7} rx={14 * sc} fill="rgba(8,6,10,0.88)" stroke="rgba(255,75,62,0.35)" strokeWidth={2} />
+              <LedTime text={clockText(clock.minutes)} h={digits} />
+            </g>
+          ) : (
+            <g transform={`translate(${cx} ${cy})`} opacity={showTime}>
+              <rect x={-digits * 1.85} y={-digits * 0.85} width={digits * 3.7} height={digits * 1.7} rx={14 * sc} fill="rgba(8,6,10,0.88)" stroke="rgba(255,75,62,0.35)" strokeWidth={2} />
+              <LedTime text={clockText(clock.minutes)} h={digits} />
+            </g>
+          )
+        ) : null}
+        {tag > 0.01 ? (
+          <g opacity={Math.min(1, tag)} transform={`translate(${cx} ${R.nightstand.y + R.nightstand.h + 56 - 14 * (1 - Math.min(1, tag))})`}>
+            <rect x={-96} y={-36} width={192} height={72} rx={36} fill={s(0.1, 0.4)} stroke={P.amber} strokeWidth={LINE} />
+            <text y={12} textAnchor="middle" fontFamily={fonts.sans} fontWeight={600} fontSize={34} fill={P.amber} letterSpacing="-0.01em">
+              Alarm on
+            </text>
+          </g>
+        ) : null}
+        {/* Sleep-math notes: thoughts, so they sit on top of everything in the room. */}
+        {notes.map((n, i) => {
+          const p = Math.min(1, Math.max(0, n.p));
+          const d = n.drift ?? 0;
+          if (p < 0.005 || d > 0.995) return null;
+          const nw = n.text.length * 21 + 64;
+          return (
+            <g
+              key={i}
+              opacity={Math.min(1, p * 2) * (1 - d)}
+              transform={`translate(${n.x + 80 * d} ${n.y - 50 * (1 - p) + 300 * d}) rotate(${(n.rot ?? 0) + 14 * d}) scale(${1.12 - 0.12 * p})`}
+            >
+              <rect x={6} y={14} width={nw} height={96} rx={24} fill="rgba(0,0,0,0.35)" />
+              <rect width={nw} height={96} rx={24} fill={s(0.24, 0.06)} stroke="rgba(243,238,230,0.78)" strokeWidth={LINE} />
+              <text x={32} y={62} fontFamily={fonts.sans} fontWeight={600} fontSize={40} fill={P.ink} letterSpacing="-0.01em">
+                {n.text}
+              </text>
+            </g>
+          );
+        })}
+        {mini && miniNote > 0.01 ? (
+          <g opacity={Math.min(1, miniNote)} transform={`translate(${96} ${300 - 40 * (1 - Math.min(1, miniNote))}) rotate(-4)`}>
+            <rect width={270} height={110} rx={30} fill={s(0.3, 0.06)} stroke="rgba(243,238,230,0.85)" strokeWidth={sw} />
+            <rect x={44} y={42} width={180} height={26} rx={13} fill="rgba(243,238,230,0.55)" />
+          </g>
+        ) : null}
+        {np > 0.001 ? (
+          <g transform={`translate(${qx} ${qy}) scale(${nScale}) rotate(${-2 * np} 280 300)`} opacity={Math.min(1, np * 4)}>
+            <QuizNote tick={quiz?.tick ?? 0} />
+          </g>
+        ) : null}
+      </svg>
     </div>
   );
 };

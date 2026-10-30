@@ -45,6 +45,13 @@ The first RacingMind board (abstract dots turning into lines and circles) was re
   - **Focus by moving the glow**: for "only fills a corner of your mind" the glow left the head and went to the sheep, instead of dimming the room.
   - The seeded photo gave a flat grey sky that killed the beach; the lake photo was used instead. Check the pick suits the video's colours.
 
+- **Lessons from ClockWatcher** (user, Oct 30; reference `src/compositions/ClockWatcher.tsx`, `ClockRoom` in `components/rooms.tsx`).
+  - **When the script is about the clock itself, show the real one**: a digital alarm clock from above with a red LED light and red digits, overriding "no digital readouts". The digits face the sleeper (turned sideways), not the viewer.
+  - **Light aimed at you runs straight**: the clock sits level with the head so the beam's centre line hits the centre of the dot; restless moves stay sideways to keep it level.
+  - **Scroll-stopping hook**: tossing and turning (head rolls across the pillow, pillow shifts, a few duvet folds), never a body under the covers.
+  - **Blends work**: the user liked two of the four gate-0 directions and asked to merge them (light from the clock + sleep-math notes). Quick 4-frame sketches of each direction (`<Name>Board`) helped them choose.
+  - Check that the photo's file exists: `photos.purpleSky` and `photos.milkyWayPines` have no file in `public/images`, so a seeded pick can come out flat grey.
+
 ## Workflow per script (revised Oct 29 after StayAwake took ~4 hours of coaching; target is ~30 minutes; one new chat per video)
 The user writes the script in a separate Claude project, records the VO in ElevenLabs, and starts a **new chat** here with both (VO as a file path, script as text). This file and memory carry everything; don't ask them to re-explain the style. **Reference implementations: `src/compositions/StayAwake.tsx`** (still room, objects that act, lamp, amber tag, `PillowRoom`) and `BedLearnedIt.tsx` / `WarmShower.tsx` (room morphs, study grid, quiz grown from the room). Keep the VO cues in one `T` object, a supers list, photo background + `SurfaceTint`.
 

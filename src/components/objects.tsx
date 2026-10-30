@@ -1499,8 +1499,10 @@ export const Clock: React.FC<{
   moon?: number;
   wedge?: { from: number; to: number; amber?: boolean; o?: number };
   ghost?: number;
+  /** An alarm clock's set hand (dial hours, 0–12): thin, with a small round tip. */
+  alarm?: number;
   style?: React.CSSProperties;
-}> = ({ size, minutes, moon = 0, wedge, ghost, style }) => {
+}> = ({ size, minutes, moon = 0, wedge, ghost, alarm, style }) => {
   const surface = useSurface();
   const u = 200 / size; // viewBox units per pixel, so strokes stay ~LINE px on screen
   const hand = (deg: number, len: number, width: number) => (
@@ -1560,6 +1562,12 @@ export const Clock: React.FC<{
           strokeLinecap="round"
           strokeDasharray={`${6 * u} ${8 * u}`}
         />
+      ) : null}
+      {alarm !== undefined ? (
+        <g opacity={0.7}>
+          <line x1={100} y1={100} x2={100 + 62 * Math.sin((alarm * 30 * Math.PI) / 180)} y2={100 - 62 * Math.cos((alarm * 30 * Math.PI) / 180)} stroke={P.ink} strokeWidth={2 * u} strokeLinecap="round" />
+          <circle cx={100 + 62 * Math.sin((alarm * 30 * Math.PI) / 180)} cy={100 - 62 * Math.cos((alarm * 30 * Math.PI) / 180)} r={5} fill={P.ink} />
+        </g>
       ) : null}
       {hand(minutes * 0.5, 46, 7 * u)}
       {hand(minutes * 6, 70, 4 * u)}

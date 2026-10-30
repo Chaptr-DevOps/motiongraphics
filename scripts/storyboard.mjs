@@ -1,4 +1,4 @@
-// Usage: node scripts/storyboard.mjs <CompositionId> <board.json>
+// Usage: node scripts/storyboard.mjs <CompositionId> <board.json> [columns, default 5]
 // board.json: [{ "sec": 0, "at": 12.5, "vo": "line spoken", "move": "what happens" }, ...]
 // `sec` is the frame to render; optional `at` is the VO time shown on the label (for boards with one frame per panel).
 // Renders one still per panel and lays them out with timing, VO and motion notes: out/storyboard/<id>.png.
@@ -8,7 +8,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-const [id, boardPath] = process.argv.slice(2);
+const [id, boardPath, colsArg] = process.argv.slice(2);
 if (!id || !boardPath) {
   console.error("Usage: node scripts/storyboard.mjs <CompositionId> <board.json>");
   process.exit(1);
@@ -27,7 +27,7 @@ for (const [i, p] of panels.entries()) {
 }
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
-const cols = 5;
+const cols = Number(colsArg) || 5;
 const html = `<html><body style="margin:0;background:#16171d;color:#eee;font:15px/1.35 -apple-system,sans-serif;padding:24px">
 <div style="font-size:26px;font-weight:600;margin-bottom:18px">${esc(id)} · storyboard</div>
 <div style="display:grid;grid-template-columns:repeat(${cols},400px);gap:22px">${panels

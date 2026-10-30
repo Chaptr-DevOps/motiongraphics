@@ -11,6 +11,8 @@ export const P = {
   hair: "rgba(243,238,230,0.12)",
   amber: "#F0A95E",
   amberGlow: "rgba(240,169,94,0.35)",
+  /** A bedside alarm clock's LED red (ClockWatcher, user Oct 30: "that's usually what people associate with that"). */
+  led: "#FF4B3E",
   margin: 72,
   right: reel.width - 140,
 };

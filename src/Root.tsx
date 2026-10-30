@@ -20,6 +20,9 @@ import { STAY_AWAKE_SECONDS, StayAwake } from "./compositions/StayAwake";
 import { StayAwakeTestA, StayAwakeTestB, StayAwakeTestC, TEST_SECONDS } from "./compositions/StayAwakeTests";
 import { BOARD_PANELS as SA_BOARD_PANELS, StayAwakeBoard } from "./compositions/StayAwakeBoard";
 import { COVER_OPTIONS as SA_COVER_OPTIONS, StayAwakeCovers } from "./compositions/StayAwakeCovers";
+import { CLOCK_WATCHER_SECONDS, ClockWatcher } from "./compositions/ClockWatcher";
+import { BOARD_PANELS as CW_BOARD_PANELS, ClockWatcherBoard } from "./compositions/ClockWatcherBoard";
+import { COVER_OPTIONS as CW_COVER_OPTIONS, ClockWatcherCovers } from "./compositions/ClockWatcherCovers";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -50,6 +53,9 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="StayAwakeTestC" component={StayAwakeTestC} durationInFrames={sec(TEST_SECONDS)} {...reel} />
       <Composition id="StayAwakeBoard" component={StayAwakeBoard} durationInFrames={SA_BOARD_PANELS} {...reel} />
       <Composition id="StayAwakeCovers" component={StayAwakeCovers} durationInFrames={SA_COVER_OPTIONS} {...reel} />
+      <Composition id="ClockWatcher" component={ClockWatcher} durationInFrames={sec(CLOCK_WATCHER_SECONDS)} {...reel} />
+      <Composition id="ClockWatcherBoard" component={ClockWatcherBoard} durationInFrames={CW_BOARD_PANELS} {...reel} />
+      <Composition id="ClockWatcherCovers" component={ClockWatcherCovers} durationInFrames={CW_COVER_OPTIONS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>

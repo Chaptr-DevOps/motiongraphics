@@ -1,0 +1,6 @@
+[
+  { "sec": 0.4, "at": 0, "vo": "Checking the clock in bed…", "move": "Your glance (dotted) lights the clock; its light swings across the pillow onto you." },
+  { "sec": 0.4333, "at": 16.3, "vo": "Six hours left. Five and a half. That countdown keeps your brain on.", "move": "Each glance drops a note of sleep math into the light, over you. Hands tick 1:00 → 1:30; your glow swells." },
+  { "sec": 0.4667, "at": 21.4, "vo": "So turn your clock to face the wall, and your phone face down.", "move": "The clock turns, and its light leaves you for the wall; the notes drift out of the light and fade. Phone flips, screen glow out." },
+  { "sec": 0.5, "at": 26.9, "vo": "Find out if you're a Clock-Watcher…", "move": "The light on the wall grows into the quiz note." }
+]
