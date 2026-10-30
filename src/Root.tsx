@@ -23,6 +23,9 @@ import { COVER_OPTIONS as SA_COVER_OPTIONS, StayAwakeCovers } from "./compositio
 import { CLOCK_WATCHER_SECONDS, ClockWatcher } from "./compositions/ClockWatcher";
 import { BOARD_PANELS as CW_BOARD_PANELS, ClockWatcherBoard } from "./compositions/ClockWatcherBoard";
 import { COVER_OPTIONS as CW_COVER_OPTIONS, ClockWatcherCovers } from "./compositions/ClockWatcherCovers";
+import { COGNITIVE_SHUFFLE_SECONDS, CognitiveShuffle } from "./compositions/CognitiveShuffle";
+import { COVER_OPTIONS as CS_COVER_OPTIONS, CognitiveShuffleCovers } from "./compositions/CognitiveShuffleCovers";
+import { BOARD_PANELS as CS_BOARD_PANELS, CognitiveShuffleBoard } from "./compositions/CognitiveShuffleBoard";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -56,6 +59,9 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="ClockWatcher" component={ClockWatcher} durationInFrames={sec(CLOCK_WATCHER_SECONDS)} {...reel} />
       <Composition id="ClockWatcherBoard" component={ClockWatcherBoard} durationInFrames={CW_BOARD_PANELS} {...reel} />
       <Composition id="ClockWatcherCovers" component={ClockWatcherCovers} durationInFrames={CW_COVER_OPTIONS} {...reel} />
+      <Composition id="CognitiveShuffle" component={CognitiveShuffle} durationInFrames={sec(COGNITIVE_SHUFFLE_SECONDS)} {...reel} />
+      <Composition id="CognitiveShuffleCovers" component={CognitiveShuffleCovers} durationInFrames={CS_COVER_OPTIONS} {...reel} />
+      <Composition id="CognitiveShuffleBoard" component={CognitiveShuffleBoard} durationInFrames={CS_BOARD_PANELS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>

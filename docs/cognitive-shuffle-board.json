@@ -1,0 +1,18 @@
+[
+  { "sec": 0, "at": 0, "vo": "A · Your mind won't switch off?", "move": "A · Pictures over your head. Worry notes pile up over you on the pillow; your glow is big." },
+  { "sec": 0.0333, "at": 6.4, "vo": "A · Trying to think of nothing leaves a gap, and worries fill it.", "move": "The notes are swept off the bed, leaving a dashed empty gap; they slide straight back into it." },
+  { "sec": 0.0667, "at": 12.4, "vo": "A · For B… a banana, a bike, a bear.", "move": "Quick pictures pop over your head one after another; each fades as the next arrives. Your glow calms." },
+  { "sec": 0.1, "at": 27.3, "vo": "A · …the sleep quiz in our bio", "move": "The last picture turns over into the quiz note." },
+  { "sec": 0.1333, "at": 0, "vo": "B · Your mind won't switch off?", "move": "B · Letter tiles. Worry notes over your head; five tiles lie face down on the duvet." },
+  { "sec": 0.1667, "at": 6.4, "vo": "B · …leaves a gap, and worries fill it.", "move": "The tiles are gone: five dashed empty slots, and the worry notes slide into the gap." },
+  { "sec": 0.2, "at": 12.4, "vo": "B · Pick a word, like bread. For B… banana, bike, bear.", "move": "The tiles snap up to spell BREAD. B lifts out (tilt, shadow, ghost slot) and the pictures flick up out of it. Then B drops back and R lifts." },
+  { "sec": 0.2333, "at": 27.3, "vo": "B · …the sleep quiz in our bio", "move": "The tiles flip over; their backs grow into the quiz note." },
+  { "sec": 0.2667, "at": 0, "vo": "C · Your mind won't switch off?", "move": "C · Picture cards. A deck on the nightstand deals worry cards face up over the bed." },
+  { "sec": 0.3, "at": 6.4, "vo": "C · …worries fill it. (…so nothing becomes a story)", "move": "The worry cards line up into a neat strip, one leading to the next: a story." },
+  { "sec": 0.3333, "at": 12.4, "vo": "C · It's called cognitive shuffling… banana, bike, bear.", "move": "The deck riffles (two half-stacks); picture cards land crooked on top of each other, never in a row." },
+  { "sec": 0.3667, "at": 27.3, "vo": "C · …the sleep quiz in our bio", "move": "The last card dealt is the quiz." },
+  { "sec": 0.4, "at": 0, "vo": "D · Your mind won't switch off?", "move": "D · A jar. An open jar beside the bed (seen from above), rattling, full of worry scraps." },
+  { "sec": 0.4333, "at": 1.8, "vo": "D · Don't empty it… leaves a gap, and worries fill it.", "move": "Emptied, the jar is bare, and worry notes pour straight back in." },
+  { "sec": 0.4667, "at": 12.4, "vo": "D · For B… banana, bike, bear.", "move": "A B label on the jar; a banana, a bike and a bear tumble in instead. The label switches to R." },
+  { "sec": 0.5, "at": 27.3, "vo": "D · …the sleep quiz in our bio", "move": "The label lifts off and grows into the quiz note." }
+]

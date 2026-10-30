@@ -1711,3 +1711,101 @@ export const PostcardBack: React.FC<{ w: number; h: number; postmark?: number }>
     </div>
   );
 };
+
+// ─── CognitiveShuffle: letter tiles and the quick things you picture ──────────────────────────────────────────────────
+
+export type Thing = "banana" | "bike" | "bear" | "rabbit" | "rocket" | "rain" | "ring";
+
+/** A line drawing of one thing you picture, centred on 0,0, about 110 units across (SVG units). */
+export const Doodle: React.FC<{ thing: Thing; o?: number }> = ({ thing, o = 0.9 }) => {
+  const ink = `rgba(243,238,230,${o})`;
+  const st = { fill: "none", stroke: ink, strokeWidth: LINE + 1, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  switch (thing) {
+    case "banana":
+      return (
+        <g>
+          <path d="M -46 -22 Q -30 40 44 26 Q 8 24 -30 -30 Z" {...st} />
+          <path d="M -30 -30 L -38 -42 M 44 26 L 50 28" {...st} />
+        </g>
+      );
+    case "bike":
+      return (
+        <g>
+          <circle cx={-32} cy={18} r={24} {...st} />
+          <circle cx={34} cy={18} r={24} {...st} />
+          <path d="M -32 18 L -8 -16 L 22 -16 L 34 18 M -8 -16 L 2 18 L -32 18 M 2 18 L 22 -16 M -14 -26 L -2 -26 M 22 -16 L 18 -30 L 30 -32" {...st} />
+        </g>
+      );
+    case "bear":
+      return (
+        <g>
+          <circle cx={-27} cy={-28} r={13} {...st} />
+          <circle cx={27} cy={-28} r={13} {...st} />
+          <circle cx={0} cy={0} r={38} {...st} />
+          <path d="M -7 8 Q 0 4 7 8 Q 0 16 -7 8 Z" fill={ink} />
+          <path d="M 0 14 L 0 20 M -9 22 Q 0 28 9 22" {...st} />
+          <circle cx={-14} cy={-8} r={3.5} fill={ink} />
+          <circle cx={14} cy={-8} r={3.5} fill={ink} />
+        </g>
+      );
+    case "rabbit":
+      return (
+        <g>
+          <ellipse cx={-12} cy={-30} rx={9} ry={26} {...st} />
+          <ellipse cx={12} cy={-30} rx={9} ry={26} {...st} />
+          <circle cx={0} cy={16} r={28} {...st} />
+          <circle cx={-9} cy={12} r={3.5} fill={ink} />
+          <circle cx={9} cy={12} r={3.5} fill={ink} />
+        </g>
+      );
+    case "rocket":
+      return (
+        <g transform="rotate(30)">
+          <path d="M 0 -48 Q 22 -20 17 24 L -17 24 Q -22 -20 0 -48 Z" {...st} />
+          <circle cx={0} cy={-10} r={8} {...st} />
+          <path d="M -17 6 L -30 32 L -17 28 M 17 6 L 30 32 L 17 28 M -8 30 Q 0 48 8 30" {...st} />
+        </g>
+      );
+    case "rain":
+      return (
+        <g>
+          <path d="M -36 4 Q -50 4 -46 -12 Q -42 -26 -26 -22 Q -20 -42 2 -40 Q 22 -40 26 -22 Q 46 -24 46 -6 Q 46 6 32 4 Z" {...st} />
+          <path d="M -20 20 L -26 36 M 2 20 L -4 36 M 24 20 L 18 36" {...st} />
+        </g>
+      );
+    case "ring":
+      return (
+        <g>
+          <circle cx={0} cy={14} r={30} {...st} />
+          <path d="M -13 -22 L 0 -38 L 13 -22 L 0 -12 Z" {...st} />
+        </g>
+      );
+  }
+};
+
+/**
+ * A wooden letter tile from above, centred on 0,0 (SVG units). `flip` 0 = face down, 1 = face up (a 2D scaleX flip);
+ * past halfway the face shows `ch`. `lift` raises it off the bed: bigger, a longer shadow and a slight tilt. `amber` edges
+ * it in amber (the letter you're on).
+ */
+export const LetterTile: React.FC<{ ch: string; z?: number; flip?: number; lift?: number; amber?: number }> = ({ ch, z = 60, flip = 1, lift = 0, amber = 0 }) => {
+  const s = useSurface();
+  const sx = Math.abs(Math.cos(Math.PI * (1 - flip)));
+  const up = flip > 0.5;
+  return (
+    <g transform={`scale(${1 + lift * 0.28})`}>
+      <rect x={-z / 2 + 3 + lift * 8} y={-z / 2 + 6 + lift * 20} width={z} height={z} rx={z * 0.24} fill={`rgba(0,0,0,${0.35 + lift * 0.1})`} transform={`scale(${sx} 1)`} />
+      <g transform={`scale(${Math.max(0.02, sx)} 1)`}>
+        <rect x={-z / 2} y={-z / 2} width={z} height={z} rx={z * 0.24} fill={up ? "rgba(236,226,208,0.94)" : s(0.12, 0.18)} stroke="rgba(243,238,230,0.8)" strokeWidth={LINE} />
+        {amber > 0.01 ? <rect x={-z / 2} y={-z / 2} width={z} height={z} rx={z * 0.24} fill="none" stroke={P.amber} strokeWidth={LINE + 1.5} opacity={amber} /> : null}
+        {up ? (
+          <text y={z * 0.25} textAnchor="middle" fontFamily={fonts.sans} fontWeight={600} fontSize={z * 0.7} fill="#1B1E2E">
+            {ch}
+          </text>
+        ) : (
+          <rect x={-z / 2 + 10} y={-z / 2 + 10} width={z - 20} height={z - 20} rx={z * 0.14} fill="none" stroke="rgba(243,238,230,0.3)" strokeWidth={2} />
+        )}
+      </g>
+    </g>
+  );
+};
