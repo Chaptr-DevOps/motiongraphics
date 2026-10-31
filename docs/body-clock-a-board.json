@@ -1,0 +1,7 @@
+[
+  { "sec": 0.4, "at": 0, "vo": "Wide awake at midnight, foggy at 7 a.m.?", "move": "A bigger clock fills the nightstand; its hands sweep past midnight. Overhead light on, you wide awake." },
+  { "sec": 0.4333, "at": 3.5, "vo": "Your body clock may run two hours late… so it slides later.", "move": "The clock grows over the room; a dashed hand (your body clock) sits two hours behind the real one." },
+  { "sec": 0.4667, "at": 20.1, "vo": "…kicked in two hours earlier.", "move": "At the camp the clock hangs above the fire; the dashed hand snaps forward onto the real one (dotted arc)." },
+  { "sec": 0.5, "at": 24.2, "vo": "Drink your morning coffee outside for ten minutes.", "move": "You step out the door with a mug into the sun; the dashed hand creeps a notch forward." },
+  { "sec": 0.5333, "at": 30.4, "vo": "At night, use a lamp… the sleep quiz in our bio", "move": "Lamp on (amber, once), overhead off; the quiz card lifts out of the lamp's light." }
+]

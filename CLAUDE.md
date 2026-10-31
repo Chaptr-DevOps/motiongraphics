@@ -52,6 +52,14 @@ The first RacingMind board (abstract dots turning into lines and circles) was re
   - **Blends work**: the user liked two of the four gate-0 directions and asked to merge them (light from the clock + sleep-math notes). Quick 4-frame sketches of each direction (`<Name>Board`) helped them choose.
   - The user deleted the purple Milky Way and Milky-Way-over-pines photos (Oct 30: didn't like their colour palette); they're out of `photos.ts`. A seeded pick that comes out flat grey usually means a missing file.
 
+- **Lessons from BodyClock** (user, Oct 31; reference `src/compositions/BodyClock.tsx`, `DeskClock` / `Pendant` / `Mug` in `components/rooms.tsx`).
+  - **Clarity first**: "the more confused I am, the less likely I am to keep watching." Preview 1 failed on objects that only made sense once explained: an overhead light drawn top-down as a ringed disc, an analog clock grown over the whole room, a light patch changing shape, eight tents round a fire (a diagram, no feeling).
+  - **Light sources as recognizable objects plus their effect**: the overhead light is a hanging pendant (cord from the top wall, dome shade, bulb; drawn a little from the side) and when on it washes the whole room cold. The window stays fixed; only the curtain moves, and the stripe of light always falls the same way.
+  - **Time as a red digital clock** at a believable size on the nightstand (user: "what people think of when they think of time"). A second, offset time is a dashed ghost readout under the real one (your body clock two hours behind); it slides up and merges when the two match.
+  - **Studies as a close-up with a feeling**: one tent, you in a sleeping bag, sunset, the fire to embers, rather than a ring of participants.
+  - **Worked first time**: coffee on a sunny step outside the door with steam ("clear to see, it's a balcony"); the curtain.
+  - The seeded photo (Milky Way, tree corner) looked washed-out grey; `photos.blueSky` was used. Prefer a clearly blue photo.
+
 ## Workflow per script (revised Oct 29 after StayAwake took ~4 hours of coaching; target is ~30 minutes; one new chat per video)
 The user writes the script in a separate Claude project, records the VO in ElevenLabs, and starts a **new chat** here with both (VO as a file path, script as text). This file and memory carry everything; don't ask them to re-explain the style. **Reference implementations: `src/compositions/StayAwake.tsx`** (still room, objects that act, lamp, amber tag, `PillowRoom`) and `BedLearnedIt.tsx` / `WarmShower.tsx` (room morphs, study grid, quiz grown from the room). Keep the VO cues in one `T` object, a supers list, photo background + `SurfaceTint`.
 

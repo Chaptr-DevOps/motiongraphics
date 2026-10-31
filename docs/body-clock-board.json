@@ -1,0 +1,14 @@
+[
+  { "sec": 0, "at": 0, "vo": "A · Wide awake at midnight, foggy at 7 a.m.?", "move": "A · The clock on the nightstand. Its hands sweep to midnight; the overhead light is on and your glow is big." },
+  { "sec": 0.0333, "at": 9.0, "vo": "A · Indoor mornings are dim and nights are bright, so it slides later.", "move": "The curtain lets in only a sliver; the bulb blazes. The clock grows over the room: your body clock's dashed hand slides two hours behind." },
+  { "sec": 0.0667, "at": 13.6, "vo": "A · Eight people camping for a week… two hours earlier.", "move": "The bedroom morphs into a camp: eight tents round a fire, no bulbs, sunrise at the top edge. The dashed hand catches up." },
+  { "sec": 0.1, "at": 27.2, "vo": "A · At night, use a lamp… the sleep quiz in our bio", "move": "Overhead off, lamp on (amber, once). The quiz card lifts out of the lamp's light." },
+  { "sec": 0.1333, "at": 0, "vo": "B · Wide awake at midnight, foggy at 7 a.m.?", "move": "B · The plant on the sill. At midnight it has turned its leaves to the overhead bulb; you're wide awake." },
+  { "sec": 0.1667, "at": 6.3, "vo": "B · Your body clock sets itself by light… dim… bright.", "move": "The plant grows over the room. Curtain shut, a sliver of morning: it ignores the window and swings round to the bulb. You're groggy." },
+  { "sec": 0.2, "at": 13.6, "vo": "B · Eight people camping… two hours earlier.", "move": "Carried out to the camp, it stands by the fire and leans up to the sunrise." },
+  { "sec": 0.2333, "at": 27.2, "vo": "B · At night, use a lamp… the sleep quiz in our bio", "move": "Lamp on, overhead off: the plant settles and droops toward the low light; its plant tag grows into the quiz." },
+  { "sec": 0.2667, "at": 0, "vo": "C · Wide awake at midnight, foggy at 7 a.m.?", "move": "C · The sundial on the rug. At midnight the bulb throws its shadow to the morning side." },
+  { "sec": 0.3, "at": 6.3, "vo": "C · Your body clock sets itself by light… slides later.", "move": "The dial grows: the bulb's hard shadow points early in the evening; a dashed ghost shows where night should be. It slides." },
+  { "sec": 0.3333, "at": 13.6, "vo": "C · Eight people camping… two hours earlier.", "move": "At the camp only the sun casts a shadow: crisp, on time." },
+  { "sec": 0.3667, "at": 27.2, "vo": "C · At night, use a lamp… the sleep quiz in our bio", "move": "Lamp on, overhead off: a low, soft shadow toward night. The dial's face turns into the quiz." }
+]

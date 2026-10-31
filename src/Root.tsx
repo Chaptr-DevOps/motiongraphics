@@ -26,6 +26,10 @@ import { COVER_OPTIONS as CW_COVER_OPTIONS, ClockWatcherCovers } from "./composi
 import { COGNITIVE_SHUFFLE_SECONDS, CognitiveShuffle } from "./compositions/CognitiveShuffle";
 import { COVER_OPTIONS as CS_COVER_OPTIONS, CognitiveShuffleCovers } from "./compositions/CognitiveShuffleCovers";
 import { BOARD_PANELS as CS_BOARD_PANELS, CognitiveShuffleBoard } from "./compositions/CognitiveShuffleBoard";
+import { BODY_CLOCK_SECONDS, BodyClock } from "./compositions/BodyClock";
+import { BOARD_PANELS as BCF_BOARD_PANELS, BodyClockFixBoard } from "./compositions/BodyClockFixBoard";
+import { COVER_OPTIONS as BC_COVER_OPTIONS, BodyClockCovers } from "./compositions/BodyClockCovers";
+import { BOARD_PANELS as BC_BOARD_PANELS, BodyClockBoard } from "./compositions/BodyClockBoard";
 import { StyleFrames } from "./compositions/StyleFrames";
 import { TEMPLATE_PREVIEW_SECONDS, TemplatePreview } from "./compositions/TemplatePreview";
 
@@ -62,6 +66,10 @@ export const RemotionRoot: React.FC = () => {
       <Composition id="CognitiveShuffle" component={CognitiveShuffle} durationInFrames={sec(COGNITIVE_SHUFFLE_SECONDS)} {...reel} />
       <Composition id="CognitiveShuffleCovers" component={CognitiveShuffleCovers} durationInFrames={CS_COVER_OPTIONS} {...reel} />
       <Composition id="CognitiveShuffleBoard" component={CognitiveShuffleBoard} durationInFrames={CS_BOARD_PANELS} {...reel} />
+      <Composition id="BodyClock" component={BodyClock} durationInFrames={sec(BODY_CLOCK_SECONDS)} {...reel} />
+      <Composition id="BodyClockFixBoard" component={BodyClockFixBoard} durationInFrames={BCF_BOARD_PANELS} {...reel} />
+      <Composition id="BodyClockCovers" component={BodyClockCovers} durationInFrames={BC_COVER_OPTIONS} {...reel} />
+      <Composition id="BodyClockBoard" component={BodyClockBoard} durationInFrames={BC_BOARD_PANELS} {...reel} />
       <Composition id="TemplatePreview" component={TemplatePreview} durationInFrames={sec(TEMPLATE_PREVIEW_SECONDS)} {...reel} />
       <Composition id="StyleFrames" component={StyleFrames} durationInFrames={4} {...reel} />
     </>

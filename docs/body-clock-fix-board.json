@@ -1,0 +1,6 @@
+[
+  { "sec": 0, "at": 0, "vo": "Wide awake at midnight…", "move": "A hanging light (cord, dome shade, bulb) is on: the whole room is washed cold and bright. The clock sits on the nightstand at midnight." },
+  { "sec": 0.0333, "at": 9.0, "vo": "Indoor mornings are dim…", "move": "Morning: the curtain stays nearly shut, so only a thin stripe of light gets in. The clock says 7; below it, a ghost readout (your body clock) says 5:00. You're groggy." },
+  { "sec": 0.0667, "at": 13.6, "vo": "Camping for a week… two hours earlier.", "move": "One tent, close up: you in a sleeping bag, the door open to the setting sun and the fire down to embers. The travel clock: your body clock's ghost readout slides up into the real time." },
+  { "sec": 0.1, "at": 27.2, "vo": "At night, use a lamp, not the overhead light.", "move": "The hanging light is off; the lamp on the nightstand is on (amber). The room is warm and dim." }
+]

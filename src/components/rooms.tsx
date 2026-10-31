@@ -1873,7 +1873,7 @@ const DIGIT: Record<string, string> = {
   "0": "abcdef", "1": "bc", "2": "abged", "3": "abgcd", "4": "fgbc", "5": "afgcd", "6": "afgedc", "7": "abc", "8": "abcdefg", "9": "abcfgd",
 };
 /** LED time, e.g. "1:30", centred on 0,0; `h` is the digit height (room units). */
-export const LedTime: React.FC<{ text: string; h: number; o?: number }> = ({ text, h, o = 1 }) => {
+export const LedTime: React.FC<{ text: string; h: number; o?: number; ghost?: boolean }> = ({ text, h, o = 1, ghost }) => {
   const k = h / 18;
   const cell = 13;
   const colon = 6;
@@ -1887,15 +1887,19 @@ export const LedTime: React.FC<{ text: string; h: number; o?: number }> = ({ tex
         if (ch === ":")
           return (
             <g key={i}>
-              <circle cx={x0 + 1.5} cy={-4} r={1.2} fill={P.led} />
-              <circle cx={x0 + 1.5} cy={4} r={1.2} fill={P.led} />
+              <circle cx={x0 + 1.5} cy={-4} r={1.2} fill={P.led} opacity={ghost ? 0.5 : 1} />
+              <circle cx={x0 + 1.5} cy={4} r={1.2} fill={P.led} opacity={ghost ? 0.5 : 1} />
             </g>
           );
         const on = DIGIT[ch] ?? "";
         return (
           <g key={i} transform={`translate(${x0} -9)`}>
             {Object.entries(SEG).map(([name, [sx, sy, sw, sh]]) => (
-              <rect key={name} x={sx} y={sy} width={sw} height={sh} rx={0.9} fill={P.led} opacity={on.includes(name) ? 1 : 0.07} />
+              ghost ? (
+                on.includes(name) ? <rect key={name} x={sx} y={sy} width={sw} height={sh} rx={0.9} fill={P.led} fillOpacity={0.32} stroke={P.led} strokeWidth={0.5} strokeDasharray="1 0.9" /> : null
+              ) : (
+                <rect key={name} x={sx} y={sy} width={sw} height={sh} rx={0.9} fill={P.led} opacity={on.includes(name) ? 1 : 0.07} />
+              )
             ))}
           </g>
         );
@@ -2152,5 +2156,69 @@ export const ClockRoom: React.FC<{
         ) : null}
       </svg>
     </div>
+  );
+};
+
+// ─── BodyClock (Oct 31) ─────────────────────────────────────────────────────────────────────────────────────────────
+const fmtHours = (hours: number) => {
+  const m = Math.round((((hours % 12) + 12) % 12) * 60) % 720;
+  return `${Math.floor(m / 60) || 12}:${String(m % 60).padStart(2, "0")}`;
+};
+
+/** A digital alarm clock from above, red LED digits facing the viewer. `ghost` adds your body clock as a dashed readout
+ *  `lag` hours behind, `ghostY` below the clock (0 = merged into the real time). */
+export const DeskClock: React.FC<{ x: number; y: number; size: number; hours: number; ghost?: { lag: number; y: number; o: number } }> = ({ x, y, size, hours, ghost }) => {
+  const s = useSurface();
+  const w = size;
+  const h = size * 0.5;
+  return (
+    <g>
+      <rect x={x - w / 2 + 4} y={y - h / 2 + 9} width={w} height={h} rx={16} fill="rgba(0,0,0,0.35)" />
+      <rect x={x - w / 2} y={y - h / 2} width={w} height={h} rx={16} fill={s(0.03, 0.4)} stroke="rgba(243,238,230,0.6)" strokeWidth={LINE} />
+      <circle cx={x} cy={y} r={w * 0.55} fill={P.led} opacity={0.07} />
+      <g transform={`translate(${x} ${y})`}>
+        <LedTime text={fmtHours(hours)} h={h * 0.6} />
+      </g>
+      {ghost && ghost.o > 0.01 ? (
+        <g transform={`translate(${x} ${y + ghost.y})`}>
+          <LedTime text={fmtHours(hours - ghost.lag)} h={h * 0.6} o={ghost.o} ghost />
+        </g>
+      ) : null}
+    </g>
+  );
+};
+
+/** A hanging pendant light, drawn a little from the side so it reads: cord from the top wall, dome shade, bulb. */
+export const Pendant: React.FC<{ x: number; y: number; on: number }> = ({ x, y, on }) => {
+  const s = useSurface();
+  const bulb = "#EEF3FF";
+  return (
+    <g>
+      <line x1={x} y1={0} x2={x} y2={y - 40} stroke="rgba(243,238,230,0.55)" strokeWidth={2.5} />
+      <rect x={x - 9} y={y - 50} width={18} height={14} rx={4} fill={s(0.2, 0.2)} stroke="rgba(243,238,230,0.6)" strokeWidth={2} />
+      <ellipse cx={x} cy={y + 6} rx={40} ry={14} fill={bulb} opacity={on} />
+      <path
+        d={`M ${x - 70} ${y + 4} Q ${x - 64} ${y - 38} ${x} ${y - 40} Q ${x + 64} ${y - 38} ${x + 70} ${y + 4} Z`}
+        fill={s(0.12 + 0.18 * on, 0.2)}
+        stroke={on > 0.5 ? bulb : "rgba(243,238,230,0.65)"}
+        strokeWidth={LINE}
+        strokeLinejoin="round"
+      />
+      <circle cx={x} cy={y + 13} r={10 + 4 * on} fill={on > 0.5 ? "#FFFFFF" : "rgba(243,238,230,0.35)"} />
+    </g>
+  );
+};
+
+/** A mug from above: handle, coffee, a curl of steam (`steam` animates it). */
+export const Mug: React.FC<{ steam: number }> = ({ steam }) => {
+  const s = useSurface();
+  return (
+    <g>
+      <circle r={26} fill="rgba(0,0,0,0.3)" transform="translate(3 6)" />
+      <rect x={20} y={-9} width={22} height={18} rx={9} fill="none" stroke={P.ink} strokeWidth={LINE} />
+      <circle r={26} fill={s(0.2, 0.2)} stroke={P.ink} strokeWidth={LINE} />
+      <circle r={17} fill="#3A2A1E" />
+      <path d="M -6 -36 q 10 -12 0 -24 q -10 -12 0 -24" fill="none" stroke="rgba(243,238,230,0.6)" strokeWidth={LINE} strokeLinecap="round" transform={`translate(${4 * Math.sin(steam)} 0)`} />
+    </g>
   );
 };
